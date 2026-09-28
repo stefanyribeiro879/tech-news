@@ -1,6 +1,8 @@
 # tech_news
 
-A new Flutter project.
+Aplicativo mobile de notícias sobre tecnologia desenvolvido como parte do Projeto A3 do curso de Redes de Computadores.
+
+O TechNews tem como objetivo centralizar conteúdos relacionados à tecnologia e permitir que o usuário acompanhe notícias de acordo com seus interesses.
 
 ## Getting Started
 
