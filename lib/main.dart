@@ -1,4 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'news_api.dart';
 
 void main() {
   runApp(const TechNewsApp());
@@ -50,134 +55,6 @@ class TechNewsApp extends StatelessWidget {
 }
 
 // ======================================================
-// MODELO DA NOTÍCIA
-// ======================================================
-
-class NewsArticle {
-  final int id;
-  final String category;
-  final String title;
-  final String summary;
-  final String content;
-  final String source;
-  final String time;
-  final String imageUrl;
-  final bool featured;
-
-  const NewsArticle({
-    required this.id,
-    required this.category,
-    required this.title,
-    required this.summary,
-    required this.content,
-    required this.source,
-    required this.time,
-    required this.imageUrl,
-    this.featured = false,
-  });
-}
-
-// ======================================================
-// NOTÍCIAS DE DEMONSTRAÇÃO
-// Depois substituiremos por RSS/API
-// ======================================================
-
-const List<NewsArticle> demoNews = [
-  NewsArticle(
-    id: 1,
-    category: 'Inteligência Artificial',
-    title: 'A inteligência artificial está mudando o futuro da tecnologia',
-    summary:
-        'Novas ferramentas de IA estão transformando a forma como trabalhamos, estudamos e utilizamos tecnologia.',
-    content:
-        'A inteligência artificial vem ganhando cada vez mais espaço no cotidiano das pessoas e das empresas.\n\n'
-        'Ferramentas capazes de gerar textos, imagens, códigos e análises estão mudando a maneira como profissionais trabalham e como organizações desenvolvem novos produtos.\n\n'
-        'Além da automação de tarefas, a IA também vem sendo utilizada em áreas como saúde, educação, segurança digital, desenvolvimento de software e atendimento ao cliente.\n\n'
-        'Nos próximos anos, especialistas esperam uma integração ainda maior entre sistemas inteligentes e os dispositivos utilizados no dia a dia.',
-    source: 'Tech News',
-    time: 'Hoje • 5 min de leitura',
-    imageUrl:
-        'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1200&q=80',
-    featured: true,
-  ),
-  NewsArticle(
-    id: 2,
-    category: 'Mobile',
-    title: 'Android recebe novidades e novos recursos para usuários',
-    summary:
-        'Atualizações do sistema prometem melhorar produtividade, segurança e integração entre dispositivos.',
-    content:
-        'O ecossistema Android continua recebendo melhorias importantes para usuários de smartphones e tablets.\n\n'
-        'Entre as novidades estão recursos voltados para privacidade, produtividade, personalização e integração entre diferentes dispositivos.\n\n'
-        'As atualizações também buscam tornar o sistema mais eficiente, rápido e seguro.',
-    source: 'Tech News',
-    time: 'Há 20 minutos',
-    imageUrl:
-        'https://images.unsplash.com/photo-1607252650355-f7fd0460ccdb?auto=format&fit=crop&w=1200&q=80',
-  ),
-  NewsArticle(
-    id: 3,
-    category: 'Segurança',
-    title: 'Novas tecnologias prometem aumentar a segurança digital',
-    summary:
-        'Empresas investem em novas formas de proteção contra ataques e vazamentos de dados.',
-    content:
-        'A segurança digital se tornou uma das maiores prioridades das empresas.\n\n'
-        'Com o aumento de ataques virtuais, organizações estão investindo em autenticação avançada, inteligência artificial, criptografia e monitoramento constante.\n\n'
-        'A tendência é que ferramentas de proteção se tornem cada vez mais automatizadas e capazes de identificar ameaças antes que elas causem danos.',
-    source: 'Tech News',
-    time: 'Há 1 hora',
-    imageUrl:
-        'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1200&q=80',
-  ),
-  NewsArticle(
-    id: 4,
-    category: 'Games',
-    title: 'Tecnologia gráfica leva jogos a um novo nível de realismo',
-    summary:
-        'Novos motores gráficos combinam iluminação avançada e inteligência artificial.',
-    content:
-        'A indústria de games está vivendo uma nova geração de avanços gráficos.\n\n'
-        'Técnicas de iluminação, inteligência artificial e geração de imagens em tempo real permitem experiências cada vez mais realistas.\n\n'
-        'Além dos gráficos, novas tecnologias também ajudam na criação de personagens, cenários e comportamentos mais naturais.',
-    source: 'Tech News',
-    time: 'Há 2 horas',
-    imageUrl:
-        'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
-  ),
-  NewsArticle(
-    id: 5,
-    category: 'Inteligência Artificial',
-    title: 'IA começa a transformar a rotina dos desenvolvedores',
-    summary:
-        'Assistentes inteligentes ajudam programadores a escrever, revisar e compreender códigos.',
-    content:
-        'Ferramentas baseadas em inteligência artificial estão se tornando parte da rotina de muitos desenvolvedores.\n\n'
-        'Esses sistemas podem sugerir trechos de código, encontrar erros, explicar funções e ajudar na documentação de projetos.\n\n'
-        'A tecnologia não elimina a necessidade de conhecimento técnico, mas pode aumentar significativamente a produtividade.',
-    source: 'Tech News',
-    time: 'Há 3 horas',
-    imageUrl:
-        'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=1200&q=80',
-  ),
-  NewsArticle(
-    id: 6,
-    category: 'Mobile',
-    title: 'Celulares ficam cada vez mais poderosos e inteligentes',
-    summary:
-        'Nova geração de processadores móveis aposta em IA integrada e maior eficiência energética.',
-    content:
-        'Os smartphones modernos possuem capacidade de processamento que antes era encontrada apenas em computadores.\n\n'
-        'A nova geração de chips móveis também incorpora unidades específicas para processamento de inteligência artificial.\n\n'
-        'Isso permite melhorar fotografias, reconhecimento de voz, segurança e consumo de bateria.',
-    source: 'Tech News',
-    time: 'Ontem',
-    imageUrl:
-        'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1200&q=80',
-  ),
-];
-
-// ======================================================
 // CONTROLE PRINCIPAL DO APP
 // ======================================================
 
@@ -191,7 +68,8 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int selectedPage = 0;
 
-  final Set<int> savedArticles = {};
+  // Guarda a notícia inteira, pois ela pode sair da lista da API depois.
+  final Map<String, NewsArticle> savedArticles = {};
 
   void changePage(int index) {
     setState(() {
@@ -199,12 +77,12 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
-  void toggleSaved(int id) {
+  void toggleSaved(NewsArticle article) {
     setState(() {
-      if (savedArticles.contains(id)) {
-        savedArticles.remove(id);
+      if (savedArticles.containsKey(article.id)) {
+        savedArticles.remove(article.id);
       } else {
-        savedArticles.add(id);
+        savedArticles[article.id] = article;
       }
     });
   }
@@ -268,8 +146,8 @@ class _AppShellState extends State<AppShell> {
 // ======================================================
 
 class HomePage extends StatefulWidget {
-  final Set<int> savedArticles;
-  final Function(int) onToggleSaved;
+  final Map<String, NewsArticle> savedArticles;
+  final Function(NewsArticle) onToggleSaved;
   final VoidCallback onOpenExplore;
 
   const HomePage({
@@ -286,29 +164,75 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String selectedCategory = 'Destaques';
 
+  // Os nomes precisam ser iguais às categorias do backend.
   final List<String> categories = const [
     'Destaques',
     'Inteligência Artificial',
     'Mobile',
     'Games',
     'Segurança',
+    'Geral',
   ];
 
-  List<NewsArticle> get filteredNews {
-    if (selectedCategory == 'Destaques') {
-      return demoNews;
-    }
+  List<NewsArticle> news = [];
+  bool loading = true;
+  String? error;
 
-    return demoNews
-        .where((article) => article.category == selectedCategory)
-        .toList();
+  @override
+  void initState() {
+    super.initState();
+    loadNews();
+  }
+
+  Future<void> loadNews() async {
+    final category = selectedCategory;
+
+    setState(() {
+      loading = true;
+      error = null;
+    });
+
+    try {
+      final result = await NewsApi.latest(
+        category: category == 'Destaques' ? null : category,
+      );
+
+      // Ignora a resposta se o usuário já trocou de categoria.
+      if (!mounted || category != selectedCategory) return;
+
+      setState(() {
+        news = result;
+        loading = false;
+      });
+    } catch (e) {
+      if (!mounted || category != selectedCategory) return;
+
+      setState(() {
+        error = e.toString();
+        loading = false;
+      });
+    }
+  }
+
+  void selectCategory(String category) {
+    if (category == selectedCategory) return;
+
+    setState(() {
+      selectedCategory = category;
+    });
+    loadNews();
   }
 
   @override
   Widget build(BuildContext context) {
-    final featured = filteredNews.isNotEmpty
-        ? filteredNews.first
-        : demoNews.first;
+    // O destaque é a notícia mais recente que tem imagem.
+    final featured = news.isEmpty
+        ? null
+        : news.firstWhere(
+            (article) => article.imageUrl != null,
+            orElse: () => news.first,
+          );
+    final latest = news.where((article) => article != featured);
 
     return SafeArea(
       child: Column(
@@ -316,145 +240,170 @@ class _HomePageState extends State<HomePage> {
           _buildHeader(context),
 
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 30),
-              children: [
-                const Text(
-                  'Olá! 👋',
-                  style: TextStyle(
-                    color: Colors.white60,
-                    fontSize: 15,
+            child: RefreshIndicator(
+              onRefresh: loadNews,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 30),
+                children: [
+                  const Text(
+                    'Olá! 👋',
+                    style: TextStyle(
+                      color: Colors.white60,
+                      fontSize: 15,
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 5),
+                  const SizedBox(height: 5),
 
-                const Text(
-                  'O que está acontecendo\nno mundo da tecnologia?',
-                  style: TextStyle(
-                    fontSize: 27,
-                    height: 1.12,
-                    fontWeight: FontWeight.w800,
+                  const Text(
+                    'O que está acontecendo\nno mundo da tecnologia?',
+                    style: TextStyle(
+                      fontSize: 27,
+                      height: 1.12,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                SizedBox(
-                  height: 42,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: categories.length,
-                    itemBuilder: (context, index) {
-                      final category = categories[index];
-                      final selected =
-                          selectedCategory == category;
+                  SizedBox(
+                    height: 42,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final category = categories[index];
+                        final selected =
+                            selectedCategory == category;
 
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            selectedCategory = category;
-                          });
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          margin: const EdgeInsets.only(right: 10),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 11,
-                          ),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? purple
-                                : cardBackground,
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Text(
-                            category,
-                            style: TextStyle(
+                        return GestureDetector(
+                          onTap: () => selectCategory(category),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.only(right: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 11,
+                            ),
+                            decoration: BoxDecoration(
                               color: selected
-                                  ? Colors.white
-                                  : Colors.white60,
-                              fontWeight: selected
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              fontSize: 12,
+                                  ? purple
+                                  : cardBackground,
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: Text(
+                              category,
+                              style: TextStyle(
+                                color: selected
+                                    ? Colors.white
+                                    : Colors.white60,
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  if (loading)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 60),
+                      child: Column(
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text(
+                            'Carregando notícias...\n'
+                            'Na primeira vez pode levar até 1 minuto.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white54),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (error != null)
+                    EmptyMessage(
+                      icon: Icons.cloud_off_rounded,
+                      title: 'Erro ao carregar notícias',
+                      subtitle: error!,
+                      actionLabel: 'Tentar novamente',
+                      onAction: loadNews,
+                    )
+                  else if (featured == null)
+                    const EmptyMessage(
+                      icon: Icons.article_outlined,
+                      title: 'Nenhuma notícia encontrada',
+                      subtitle:
+                          'Ainda não temos notícias nessa categoria.',
+                    )
+                  else ...[
+                    Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Em destaque',
+                          style: TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: widget.onOpenExplore,
+                          child: const Text(
+                            'Ver tudo',
+                            style: TextStyle(
+                              color: lightPurple,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ),
+                      ],
+                    ),
 
-                const SizedBox(height: 28),
+                    const SizedBox(height: 14),
 
-                Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
-                  children: [
+                    FeaturedCard(
+                      article: featured,
+                      isSaved:
+                          widget.savedArticles.containsKey(featured.id),
+                      onToggleSaved: () {
+                        widget.onToggleSaved(featured);
+                      },
+                    ),
+
+                    const SizedBox(height: 28),
+
                     const Text(
-                      'Em destaque',
+                      'Últimas notícias',
                       style: TextStyle(
                         fontSize: 21,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    GestureDetector(
-                      onTap: widget.onOpenExplore,
-                      child: const Text(
-                        'Ver tudo',
-                        style: TextStyle(
-                          color: lightPurple,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
 
-                const SizedBox(height: 14),
+                    const SizedBox(height: 8),
 
-                FeaturedCard(
-                  article: featured,
-                  isSaved:
-                      widget.savedArticles.contains(featured.id),
-                  onToggleSaved: () {
-                    widget.onToggleSaved(featured.id);
-                  },
-                ),
-
-                const SizedBox(height: 28),
-
-                const Text(
-                  'Últimas notícias',
-                  style: TextStyle(
-                    fontSize: 21,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                if (filteredNews.isEmpty)
-                  const EmptyMessage(
-                    icon: Icons.article_outlined,
-                    title: 'Nenhuma notícia encontrada',
-                    subtitle:
-                        'Ainda não temos notícias nessa categoria.',
-                  ),
-
-                ...filteredNews.skip(1).map(
+                    ...latest.map(
                       (article) => NewsListCard(
                         article: article,
                         isSaved:
-                            widget.savedArticles.contains(article.id),
+                            widget.savedArticles.containsKey(article.id),
                         onToggleSaved: () {
-                          widget.onToggleSaved(article.id);
+                          widget.onToggleSaved(article);
                         },
                       ),
                     ),
-              ],
+                  ],
+                ],
+              ),
             ),
           ),
         ],
@@ -757,8 +706,8 @@ class NewsListCard extends StatelessWidget {
 // ======================================================
 
 class ExplorePage extends StatefulWidget {
-  final Set<int> savedArticles;
-  final Function(int) onToggleSaved;
+  final Map<String, NewsArticle> savedArticles;
+  final Function(NewsArticle) onToggleSaved;
 
   const ExplorePage({
     super.key,
@@ -772,17 +721,64 @@ class ExplorePage extends StatefulWidget {
 
 class _ExplorePageState extends State<ExplorePage> {
   String search = '';
+  List<NewsArticle> results = [];
+  bool loading = true;
+  String? error;
+
+  // Espera o usuário parar de digitar antes de chamar a API.
+  Timer? debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    loadResults();
+  }
+
+  @override
+  void dispose() {
+    debounce?.cancel();
+    super.dispose();
+  }
+
+  void onSearchChanged(String value) {
+    search = value.trim();
+    debounce?.cancel();
+    debounce = Timer(const Duration(milliseconds: 400), loadResults);
+  }
+
+  // Sem texto (ou com só 1 letra), mostra as notícias mais recentes.
+  Future<void> loadResults() async {
+    final query = search;
+
+    setState(() {
+      loading = true;
+      error = null;
+    });
+
+    try {
+      final result = query.length < 2
+          ? await NewsApi.latest(limit: 50)
+          : await NewsApi.search(query);
+
+      // Ignora a resposta se o texto da busca já mudou.
+      if (!mounted || query != search) return;
+
+      setState(() {
+        results = result;
+        loading = false;
+      });
+    } catch (e) {
+      if (!mounted || query != search) return;
+
+      setState(() {
+        error = e.toString();
+        loading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final results = demoNews.where((article) {
-      final text =
-          '${article.title} ${article.category} ${article.summary}'
-              .toLowerCase();
-
-      return text.contains(search.toLowerCase());
-    }).toList();
-
     return SafeArea(
       child: Column(
         children: [
@@ -803,11 +799,7 @@ class _ExplorePageState extends State<ExplorePage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: TextField(
-              onChanged: (value) {
-                setState(() {
-                  search = value;
-                });
-              },
+              onChanged: onSearchChanged,
               decoration: InputDecoration(
                 hintText: 'Pesquisar notícias...',
                 prefixIcon: const Icon(Icons.search_rounded),
@@ -824,7 +816,17 @@ class _ExplorePageState extends State<ExplorePage> {
           const SizedBox(height: 12),
 
           Expanded(
-            child: results.isEmpty
+            child: loading
+                ? const Center(child: CircularProgressIndicator())
+                : error != null
+                ? EmptyMessage(
+                    icon: Icons.cloud_off_rounded,
+                    title: 'Erro ao carregar notícias',
+                    subtitle: error!,
+                    actionLabel: 'Tentar novamente',
+                    onAction: loadResults,
+                  )
+                : results.isEmpty
                 ? const EmptyMessage(
                     icon: Icons.search_off_rounded,
                     title: 'Nada encontrado',
@@ -845,9 +847,9 @@ class _ExplorePageState extends State<ExplorePage> {
                       return NewsListCard(
                         article: article,
                         isSaved: widget.savedArticles
-                            .contains(article.id),
+                            .containsKey(article.id),
                         onToggleSaved: () {
-                          widget.onToggleSaved(article.id);
+                          widget.onToggleSaved(article);
                           setState(() {});
                         },
                       );
@@ -865,8 +867,8 @@ class _ExplorePageState extends State<ExplorePage> {
 // ======================================================
 
 class SavedPage extends StatelessWidget {
-  final Set<int> savedArticles;
-  final Function(int) onToggleSaved;
+  final Map<String, NewsArticle> savedArticles;
+  final Function(NewsArticle) onToggleSaved;
 
   const SavedPage({
     super.key,
@@ -876,11 +878,7 @@ class SavedPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final saved = demoNews
-        .where(
-          (article) => savedArticles.contains(article.id),
-        )
-        .toList();
+    final saved = savedArticles.values.toList();
 
     return SafeArea(
       child: Column(
@@ -920,7 +918,7 @@ class SavedPage extends StatelessWidget {
                         article: article,
                         isSaved: true,
                         onToggleSaved: () {
-                          onToggleSaved(article.id);
+                          onToggleSaved(article);
                         },
                       );
                     },
@@ -1099,6 +1097,32 @@ class _ArticlePageState extends State<ArticlePage> {
     saved = widget.initiallySaved;
   }
 
+  // Muitos feeds trazem só o começo da matéria; o texto completo fica no site.
+  Future<void> openOriginal() async {
+    final opened = await launchUrl(
+      Uri.parse(widget.article.url),
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível abrir a matéria.'),
+        ),
+      );
+    }
+  }
+
+  // Evita repetir o resumo quando o conteúdo já começa com ele.
+  bool get showSummary {
+    String clean(String text) =>
+        text.replaceAll('…', '').replaceAll(RegExp(r'\s+'), ' ').trim();
+
+    final summary = clean(widget.article.summary);
+    return summary.isNotEmpty &&
+        !clean(widget.article.content).startsWith(summary);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1191,16 +1215,18 @@ class _ArticlePageState extends State<ArticlePage> {
                     ),
                   ),
 
-                  const SizedBox(height: 15),
+                  if (showSummary) ...[
+                    const SizedBox(height: 15),
 
-                  Text(
-                    widget.article.summary,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      height: 1.45,
-                      color: Colors.white70,
+                    Text(
+                      widget.article.summary,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        height: 1.45,
+                        color: Colors.white70,
+                      ),
                     ),
-                  ),
+                  ],
 
                   const SizedBox(height: 22),
 
@@ -1256,29 +1282,25 @@ class _ArticlePageState extends State<ArticlePage> {
 
                   const SizedBox(height: 30),
 
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: cardBackground,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          color: lightPurple,
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: openOriginal,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: purple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
                         ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Esta notícia é demonstrativa. Em uma próxima etapa conectaremos o aplicativo a fontes reais.',
-                            style: TextStyle(
-                              color: Colors.white60,
-                              height: 1.4,
-                            ),
-                          ),
+                      ),
+                      icon: const Icon(Icons.open_in_new_rounded),
+                      label: Text(
+                        'Ler matéria completa no ${widget.article.source}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
@@ -1317,7 +1339,7 @@ void openArticle(
 // ======================================================
 
 class NetworkNewsImage extends StatelessWidget {
-  final String url;
+  final String? url;
 
   const NetworkNewsImage({
     super.key,
@@ -1326,9 +1348,15 @@ class NetworkNewsImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (url == null) {
+      return _placeholder();
+    }
+
     return Image.network(
-      url,
+      url!,
       fit: BoxFit.cover,
+      // Na versão web, usa <img> quando o site da imagem bloqueia o acesso (CORS).
+      webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
       loadingBuilder: (
         context,
         child,
@@ -1349,16 +1377,20 @@ class NetworkNewsImage extends StatelessWidget {
         error,
         stackTrace,
       ) {
-        return Container(
-          color: cardBackground,
-          alignment: Alignment.center,
-          child: const Icon(
-            Icons.image_not_supported_outlined,
-            color: lightPurple,
-            size: 40,
-          ),
-        );
+        return _placeholder();
       },
+    );
+  }
+
+  Widget _placeholder() {
+    return Container(
+      color: cardBackground,
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.image_not_supported_outlined,
+        color: lightPurple,
+        size: 40,
+      ),
     );
   }
 }
@@ -1371,12 +1403,16 @@ class EmptyMessage extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   const EmptyMessage({
     super.key,
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.actionLabel,
+    this.onAction,
   });
 
   @override
@@ -1414,6 +1450,19 @@ class EmptyMessage extends StatelessWidget {
                 height: 1.4,
               ),
             ),
+
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 20),
+
+              FilledButton(
+                onPressed: onAction,
+                style: FilledButton.styleFrom(
+                  backgroundColor: purple,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text(actionLabel!),
+              ),
+            ],
           ],
         ),
       ),

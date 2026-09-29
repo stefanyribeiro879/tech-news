@@ -22,7 +22,7 @@ KEYWORDS: dict[str, list[str]] = {
     "Games": [
         "game", "games", "jogo", "jogos", "gamer", "playstation", "ps5", "xbox",
         "nintendo", "switch 2", "steam", "console", "gta", "fortnite",
-        "minecraft", "esports",
+        "minecraft", "esports", "valorant", "lol", "league of legends", "fifa", "call of duty",
     ],
     "Segurança": [
         "seguranca", "ciberseguranca", "hacker", "hackers", "ataque", "ataques",

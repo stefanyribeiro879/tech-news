@@ -20,13 +20,15 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -r requirements-dev.txt
-uvicorn app.main:app --reload
+python run.py
 ```
+
+Depois da primeira instalação, basta `python run.py` dentro da pasta `backend`. Não é preciso ativar o `.venv`, porque o script usa o Python dele automaticamente. Opções: `--host 0.0.0.0`, `--port 9000` e `--no-reload`.
 
 - API: http://127.0.0.1:8000
 - Documentação interativa (Swagger): http://127.0.0.1:8000/docs
 
-Para testar a partir do celular/emulador na mesma rede, use `uvicorn app.main:app --host 0.0.0.0` e acesse pelo IP da máquina (no emulador Android, `http://10.0.2.2:8000`).
+Para testar a partir do celular/emulador na mesma rede, use `python run.py --host 0.0.0.0` e acesse pelo IP da máquina (no emulador Android, `http://10.0.2.2:8000`).
 
 ## Rotas
 
