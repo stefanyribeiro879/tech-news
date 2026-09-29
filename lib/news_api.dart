@@ -74,6 +74,25 @@ class NewsArticle {
     );
   }
 
+  // Linha da tabela saved_articles do Supabase (mesmos campos, id em article_id).
+  factory NewsArticle.fromSavedRow(Map<String, dynamic> row) {
+    return NewsArticle.fromJson({...row, 'id': row['article_id']});
+  }
+
+  Map<String, dynamic> toSavedRow() {
+    return {
+      'article_id': id,
+      'title': title,
+      'summary': summary,
+      'content': content,
+      'url': url,
+      'image_url': imageUrl,
+      'source': source,
+      'category': category,
+      'published_at': publishedAt.toUtc().toIso8601String(),
+    };
+  }
+
   // Texto como "Há 20 minutos", "Ontem" ou "12/09/2026".
   String get time {
     final diff = DateTime.now().difference(publishedAt);
@@ -113,6 +132,9 @@ class NewsApi {
   // No plano gratuito do Render o servidor "dorme" e leva até ~1 min para acordar.
   static const Duration _timeout = Duration(seconds: 90);
 
+  // Pode ser trocado nos testes por um cliente falso (package:http/testing).
+  static http.Client client = http.Client();
+
   static Future<List<NewsArticle>> latest({
     String? category,
     int limit = 30,
@@ -143,7 +165,7 @@ class NewsApi {
 
     final http.Response response;
     try {
-      response = await http.get(uri).timeout(_timeout);
+      response = await client.get(uri).timeout(_timeout);
     } catch (_) {
       throw NewsApiException(
         'Não foi possível conectar ao servidor ($apiBaseUrl). '

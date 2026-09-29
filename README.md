@@ -19,6 +19,12 @@ O app busca as notícias no backend (pasta [backend/](backend/)), que lê feeds 
    flutter run -d chrome
    ```
 
+Para conferir se nenhuma tela "estoura" o layout no celular ou no computador:
+
+```bash
+flutter test
+```
+
 Endereço da API usado pelo app ([lib/news_api.dart](lib/news_api.dart)):
 
 | Onde o app roda | Endereço |
@@ -32,6 +38,9 @@ Endereço da API usado pelo app ([lib/news_api.dart](lib/news_api.dart)):
 
 - **App web**: GitHub Pages, servido a partir da pasta `docs/` da branch `main`.
 - **Backend**: [Render](https://render.com), plano free, configurado em [render.yaml](render.yaml).
+- **Usuários e notícias salvas**: [Supabase](https://supabase.com) (login por e-mail/senha + banco Postgres). As tabelas e regras de segurança estão em [supabase/schema.sql](supabase/schema.sql); a URL e a publishable key ficam em [lib/supabase_service.dart](lib/supabase_service.dart).
+
+> O projeto gratuito do Supabase é pausado após 1 semana sem uso. Para reativar: painel do Supabase > "Restore project".
 
 ### 1. Backend no Render (só na primeira vez)
 
