@@ -37,7 +37,7 @@ Endereço da API usado pelo app ([lib/news_api.dart](lib/news_api.dart)):
 
 1. Entre em https://render.com com a conta do GitHub dona do repositório.
 2. **New > Blueprint**, escolha o repositório `tech-news` e a branch `main`, e confirme.
-3. Quando o deploy terminar, copie o endereço do serviço (ex.: `https://tech-news-api.onrender.com`) e teste `.../health` no navegador.
+3. Quando o deploy terminar, copie o endereço do serviço (ex.: `https://technews-a3-api.onrender.com`) e teste `.../health` no navegador.
 4. Se o endereço for diferente, atualize `productionApiUrl` em [lib/news_api.dart](lib/news_api.dart).
 
 A cada push na `main`, o Render publica o backend de novo sozinho.
@@ -51,6 +51,14 @@ flutter build web --release --base-href /tech-news/ --output docs
 ```
 
 Faça commit da pasta `docs/` e push na `main`. O site fica em https://stefanyribeiro879.github.io/tech-news/.
+
+### 3. App Android (APK)
+
+```bash
+flutter build apk --release
+```
+
+O arquivo fica em `build/app/outputs/flutter-apk/app-release.apk`. Ele não vai para o git; mande pelo WhatsApp/Drive ou anexe numa Release do GitHub. No celular, abra o arquivo e permita "instalar apps de fontes desconhecidas". O APK usa o backend do Render, então funciona em qualquer rede (Wi-Fi ou 4G).
 
 ## Getting Started
 

@@ -26387,7 +26387,7 @@ _.e=c
 _.f=d
 _.r=e
 _.a=f},
-aCL(){return"https://tech-news-api.onrender.com"},
+aCL(){return"https://technews-a3-api.onrender.com"},
 aza(a){return new A.Lm(a)},
 Lo(a,b){var s=0,r=A.N(t.Ym),q,p,o
 var $async$Lo=A.O(function(c,d){if(c===1)return A.K(d,r)

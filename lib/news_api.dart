@@ -8,8 +8,8 @@ import 'package:http/http.dart' as http;
 // ======================================================
 
 // Backend publicado no Render. Confira o endereço exato no painel do Render
-// (se o nome já existir, ele acrescenta um sufixo, ex.: tech-news-api-x1y2).
-const String productionApiUrl = 'https://tech-news-api.onrender.com';
+// (se o nome já existir, ele acrescenta um sufixo, ex.: technews-a3-api-x1y2).
+const String productionApiUrl = 'https://technews-a3-api.onrender.com';
 
 // Pode ser trocado ao rodar o app:
 // flutter run --dart-define=API_URL=http://192.168.0.10:8000

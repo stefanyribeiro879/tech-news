@@ -2,7 +2,7 @@
 # No painel do Render: New > Blueprint > escolher este repositório.
 services:
   - type: web
-    name: tech-news-api
+    name: technews-a3-api
     runtime: python
     plan: free
     rootDir: backend
