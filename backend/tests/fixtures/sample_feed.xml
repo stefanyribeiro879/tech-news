@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:content="http://purl.org/rss/1.0/modules/content/"
+     xmlns:media="http://search.yahoo.com/mrss/">
+  <channel>
+    <title>Feed de Teste</title>
+    <link>https://exemplo.com</link>
+    <item>
+      <title>OpenAI lança novo modelo de IA para programadores</title>
+      <link>https://exemplo.com/ia-openai</link>
+      <pubDate>Mon, 28 Sep 2026 14:00:00 -0300</pubDate>
+      <description><![CDATA[<p>O novo modelo de <b>inteligência artificial</b> promete ajudar desenvolvedores.</p>]]></description>
+      <content:encoded><![CDATA[<p>Primeiro parágrafo.</p><p>Segundo &amp; último parágrafo.</p><img src="https://exemplo.com/ia.jpg"/>]]></content:encoded>
+    </item>
+    <item>
+      <title>Golpe no WhatsApp: hackers roubam senhas de usuários</title>
+      <link>https://exemplo.com/golpe</link>
+      <pubDate>Tue, 29 Sep 2026 09:30:00 -0300</pubDate>
+      <description>Criminosos usam phishing para enganar vítimas.</description>
+      <media:content url="https://exemplo.com/golpe.jpg" medium="image"/>
+    </item>
+    <item>
+      <title>Empresa anuncia resultado trimestral</title>
+      <link>https://exemplo.com/resultado</link>
+      <pubDate>Sun, 27 Sep 2026 10:00:00 -0300</pubDate>
+      <description>Nada de tecnologia específica aqui.</description>
+    </item>
+    <item>
+      <title>Item sem link deve ser ignorado</title>
+    </item>
+  </channel>
+</rss>
