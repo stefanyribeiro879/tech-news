@@ -572,7 +572,7 @@ class _PagedNewsListState extends State<PagedNewsList> {
           switchOutCurve: Curves.easeInCubic,
           layoutBuilder: (current, previous) => Stack(
             alignment: Alignment.topCenter,
-            children: [...previous, if (current != null) current],
+            children: [...previous, ?current],
           ),
           // A página nova entra pelo lado para onde a pessoa avançou.
           transitionBuilder: (child, animation) {

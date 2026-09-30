@@ -117,12 +117,14 @@ class _LookOption extends StatelessWidget {
                               color: colors.onSurfaceVariant,
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              motionLabel,
-                              style: TextStyle(
-                                color: colors.onSurfaceVariant,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
+                            Flexible(
+                              child: Text(
+                                motionLabel,
+                                style: TextStyle(
+                                  color: colors.onSurfaceVariant,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ],
