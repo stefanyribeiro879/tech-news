@@ -1,0 +1,27 @@
+# Verificação a cada push: analisa o código e roda os testes.
+# Não publica nada — serve para saber se o pacote em construção está saudável.
+name: Verificação
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Analisar o código
+        run: flutter analyze --no-fatal-infos
+
+      - name: Rodar os testes
+        run: flutter test

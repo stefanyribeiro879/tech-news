@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Marca "NT" do Tech News (gerada a partir de lib/logo.dart). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#2317FA" android:pathData="M28.96,28.74 L69.90,69.68 L69.90,81.00 L68.15,81.00 L38.10,50.95 L38.10,81.00 L28.96,81.00 Z" />
+    <path android:fillColor="#2317FA" android:pathData="M32.88,27.00 L79.04,27.00 L79.04,35.93 L68.37,35.93 L68.37,49.86 L79.04,60.53 L79.04,81.00 L69.90,81.00 L69.90,64.02 L59.44,53.56 L59.44,35.93 L41.81,35.93 Z" />
+</vector>

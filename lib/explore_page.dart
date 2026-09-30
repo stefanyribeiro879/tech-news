@@ -173,7 +173,7 @@ class _ExplorePageState extends State<ExplorePage> {
               subtitle: 'Tente outra palavra, mais curta ou sem acento.',
             )
           else
-            ...results.map((article) => NewsListTile(article: article)),
+            PagedNewsList(articles: results),
         ],
       ),
     );
@@ -213,7 +213,7 @@ class _TopicGrid extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: isSelected ? topic.color : Colors.transparent,
+                        color: isSelected ? topic.tint(context) : Colors.transparent,
                         width: 2,
                       ),
                     ),

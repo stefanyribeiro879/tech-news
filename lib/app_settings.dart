@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'theme.dart';
+
 // ======================================================
 // PREFERÊNCIAS GUARDADAS NO APARELHO
 // (no navegador ficam no localStorage)
 // ======================================================
 
 class AppSettings extends ChangeNotifier {
-  static const _themeKey = 'theme_mode';
+  static const _lookKey = 'app_look';
+  static const _oldThemeKey = 'theme_mode'; // versões até 1.0.2
   static const _rememberKey = 'remember_login';
   static const _hasAccountKey = 'has_account_on_device';
 
   SharedPreferences? _prefs;
 
-  ThemeMode themeMode = ThemeMode.light;
+  AppLook look = AppLook.light;
 
   // "Manter conectado": se false, a sessão é encerrada ao abrir o app de novo.
   bool rememberLogin = true;
@@ -28,16 +31,20 @@ class AppSettings extends ChangeNotifier {
       return; // sem armazenamento: usa os valores padrão
     }
 
-    themeMode = _prefs!.getString(_themeKey) == 'dark'
-        ? ThemeMode.dark
-        : ThemeMode.light;
+    final saved = _prefs!.getString(_lookKey);
+    look = saved != null
+        ? AppLook.fromName(saved)
+        // Quem usava o antigo "Tema escuro" continua no escuro.
+        : _prefs!.getString(_oldThemeKey) == 'dark'
+        ? AppLook.dark
+        : AppLook.light;
     rememberLogin = _prefs!.getBool(_rememberKey) ?? true;
     hasAccountOnDevice = _prefs!.getBool(_hasAccountKey) ?? false;
   }
 
-  void setDarkMode(bool dark) {
-    themeMode = dark ? ThemeMode.dark : ThemeMode.light;
-    _prefs?.setString(_themeKey, dark ? 'dark' : 'light');
+  void setLook(AppLook value) {
+    look = value;
+    _prefs?.setString(_lookKey, value.name);
     notifyListeners();
   }
 

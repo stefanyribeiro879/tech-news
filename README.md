@@ -71,18 +71,13 @@ Faça commit da pasta `docs/` e push na `main`. O site fica em https://stefanyri
 
 ### 3. App Android (APK) e atualização automática
 
-O APK é gerado e publicado pelo GitHub Actions ([.github/workflows/release-android.yml](.github/workflows/release-android.yml)). Ao abrir, o app consulta a última Release do GitHub. Se houver versão nova, mostra "Nova versão", baixa o APK e abre o instalador do Android. O usuário só toca em **Atualizar** e depois em **Instalar**. Também dá para procurar manualmente em **Perfil > Procurar atualização**.
+O APK é gerado e publicado pelo GitHub Actions ([.github/workflows/release-android.yml](.github/workflows/release-android.yml)). Ao abrir, o app consulta a última Release do GitHub. Se houver versão nova, mostra "Atualização disponível", e a atualização é **obrigatória**. O app confere a permissão "Instalar apps desconhecidos", baixa o APK e pede a confirmação do Android. Se a instalação falhar, o app mostra o motivo e oferece "Tentar de novo" ou "Baixar pelo navegador".
 
-**Para lançar uma versão nova:**
+**Pacotes de atualização.** As mudanças se acumulam e só viram versão quando o pacote estiver pronto:
 
-1. Aumente `version:` no [pubspec.yaml](pubspec.yaml), por exemplo de `1.0.1+2` para `1.0.2+3`. Aumente sempre os dois números.
-2. Faça commit e push.
-3. Crie a tag com o texto de novidades, que é o que aparece para o usuário:
-   ```bash
-   git tag -a v1.0.2 -m "Corrige o cadastro em algumas redes"
-   git push origin v1.0.2
-   ```
-4. Acompanhe na aba **Actions** do GitHub. Em ~5 min a Release aparece com o `tech-news.apk`.
+1. Trabalhe na branch `eduardo`. Cada push roda a **Verificação** ([ci.yml](.github/workflows/ci.yml)), com análise do código e testes, sem publicar nada.
+2. Com o pacote pronto e verificado, leve para a `main` e aumente `version:` no [pubspec.yaml](pubspec.yaml), por exemplo de `1.1.0+4` para `1.2.0+5`. Aumente sempre os dois números.
+3. No GitHub, vá em **Actions > Release Android > Run workflow**. Ele roda os testes, gera o APK e cria a Release `v1.2.0`. Se a versão já tiver sido publicada, ele recusa.
 
 **Configuração (só na primeira vez).** A chave de assinatura precisa ser sempre a mesma. Se ela mudar, o Android recusa instalar a atualização.
 

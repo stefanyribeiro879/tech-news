@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'motion.dart';
 import 'news_api.dart';
 import 'supabase_service.dart';
 import 'theme.dart';
@@ -197,7 +198,7 @@ class _HomePageState extends State<HomePage> {
     return [
       if (featured.isNotEmpty) ...[
         const SectionHeader(title: 'Destaques para você'),
-        _HighlightsCarousel(articles: featured),
+        Appear(child: _HighlightsCarousel(articles: featured)),
         const SizedBox(height: 28),
       ],
 
@@ -220,17 +221,8 @@ class _HomePageState extends State<HomePage> {
         actionLabel: 'Ver tudo',
         onAction: () => select(category),
       ),
-      SizedBox(
-        height: 258,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: items.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 12),
-          itemBuilder: (context, index) =>
-              CompactNewsCard(article: items[index]),
-        ),
-      ),
-      const SizedBox(height: 26),
+      PagedNewsList(articles: items),
+      const SizedBox(height: 22),
     ];
   }
 
@@ -267,13 +259,15 @@ class _HomePageState extends State<HomePage> {
           onAdd: () => widget.onAddFavorite(selected),
         ),
 
-      SizedBox(height: 250, child: FeaturedNewsCard(article: featured)),
+      Appear(
+        child: SizedBox(height: 250, child: FeaturedNewsCard(article: featured)),
+      ),
 
       const SizedBox(height: 22),
 
-      ...list
-          .where((article) => article != featured)
-          .map((article) => NewsListTile(article: article)),
+      PagedNewsList(
+        articles: list.where((article) => article != featured).toList(),
+      ),
     ];
   }
 }
@@ -354,8 +348,8 @@ class _Greeting extends StatelessWidget {
                 backgroundColor: colors.primary,
                 child: Text(
                   profile.initial,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: colors.onPrimary,
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
                   ),
@@ -467,7 +461,7 @@ class _Tab extends StatelessWidget {
     final Color foreground;
     if (selected) {
       background = colors.primary;
-      foreground = Colors.white;
+      foreground = colors.onPrimary;
     } else if (muted) {
       background = Colors.transparent;
       foreground = colors.onSurfaceVariant;

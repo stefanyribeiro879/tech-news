@@ -148,12 +148,12 @@ class _FavoriteTopicsPageState extends State<FavoriteTopicsPage> {
                     child: FilledButton(
                       onPressed: (saving || selected.isEmpty) ? null : save,
                       child: saving
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 22,
                               height: 22,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2.4,
-                                color: Colors.white,
+                                color: context.colors.onPrimary,
                               ),
                             )
                           : Text(
@@ -204,7 +204,7 @@ class _TopicOption extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: checked ? topic.color : colors.outlineVariant,
+                color: checked ? topic.tint(context) : colors.outlineVariant,
                 width: checked ? 1.8 : 1,
               ),
             ),

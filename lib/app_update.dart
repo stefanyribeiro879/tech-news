@@ -3,33 +3,32 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:ota_update/ota_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // ======================================================
 // ATUALIZAÇÃO DO APP (ANDROID)
-// Cada versão nova é publicada como Release no GitHub (ver
+// Cada pacote de atualização é publicado como Release no GitHub (ver
 // .github/workflows/release-android.yml). O app compara a versão
-// instalada com a última Release e, se houver uma mais nova, baixa
-// o APK e abre o instalador do Android.
+// instalada com a última Release e, se houver uma mais nova, exige a
+// atualização: baixa o APK e entrega ao instalador do Android.
 // ======================================================
 
 const String _latestReleaseUrl =
     'https://api.github.com/repos/stefanyribeiro879/tech-news/releases/latest';
 
+// Código nativo em MainActivity.kt (permissão "Instalar apps desconhecidos").
+const _installer = MethodChannel('technews/installer');
+
 class AppRelease {
   final String version;
   final String apkUrl;
-  final String notes;
   final String? sha256;
 
-  const AppRelease({
-    required this.version,
-    required this.apkUrl,
-    required this.notes,
-    this.sha256,
-  });
+  const AppRelease({required this.version, required this.apkUrl, this.sha256});
 }
 
 bool get appUpdateSupported =>
@@ -65,7 +64,6 @@ Future<AppRelease?> fetchNewerRelease() async {
   return AppRelease(
     version: version,
     apkUrl: apk['browser_download_url'] as String,
-    notes: (json['body'] as String?)?.trim() ?? '',
     sha256: digest != null && digest.startsWith('sha256:')
         ? digest.substring('sha256:'.length)
         : null,
@@ -112,6 +110,7 @@ Future<void> checkForAppUpdate(BuildContext context, {bool manual = false}) asyn
     return;
   }
 
+  // Atualização obrigatória: o diálogo não fecha até instalar.
   await showDialog<void>(
     context: context,
     barrierDismissible: false,
@@ -119,9 +118,34 @@ Future<void> checkForAppUpdate(BuildContext context, {bool manual = false}) asyn
   );
 }
 
+// O FilledButton do tema ocupa a largura toda; no diálogo, tamanho do texto.
+Widget _primaryButton(String label, VoidCallback onPressed) => FilledButton(
+  onPressed: onPressed,
+  style: FilledButton.styleFrom(
+    minimumSize: const Size(0, 44),
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+  ),
+  child: Text(label),
+);
+
 void _showSnack(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
+
+Future<bool> _canInstall() async {
+  try {
+    return await _installer.invokeMethod<bool>('canInstall') ?? true;
+  } catch (_) {
+    return true; // sem o canal (versão antiga): tenta instalar mesmo assim
+  }
+}
+
+// ======================================================
+// DIÁLOGO DE ATUALIZAÇÃO
+// Etapas: pedir → (permissão) → baixar → instalar → (erro com saídas).
+// ======================================================
+
+enum _Step { ask, permission, downloading, installing, error }
 
 class _UpdateDialog extends StatefulWidget {
   final AppRelease release;
@@ -132,30 +156,65 @@ class _UpdateDialog extends StatefulWidget {
   State<_UpdateDialog> createState() => _UpdateDialogState();
 }
 
-class _UpdateDialogState extends State<_UpdateDialog> {
+class _UpdateDialogState extends State<_UpdateDialog>
+    with WidgetsBindingObserver {
   StreamSubscription<OtaEvent>? subscription;
-  bool downloading = false;
+  _Step step = _Step.ask;
   double? progress;
   String? error;
 
+  // A janela de instalação do Android apareceu e a pessoa voltou ao app sem
+  // concluir: mostramos as opções de tentar de novo.
+  bool installerClosed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     subscription?.cancel();
     super.dispose();
   }
 
-  void startUpdate() {
+  // Volta das Configurações ou do instalador do Android.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+
+    if (step == _Step.permission) {
+      start(); // confere a permissão de novo e segue sozinho se liberada
+    } else if (step == _Step.installing) {
+      setState(() => installerClosed = true);
+    }
+  }
+
+  Future<void> start() async {
+    if (!await _canInstall()) {
+      if (mounted) setState(() => step = _Step.permission);
+      return;
+    }
+    if (!mounted) return;
+
     setState(() {
-      downloading = true;
+      step = _Step.downloading;
       progress = null;
       error = null;
+      installerClosed = false;
     });
 
+    await subscription?.cancel();
     subscription = OtaUpdate()
         .execute(
           widget.release.apkUrl,
           destinationFilename: 'tech-news-${widget.release.version}.apk',
           sha256checksum: widget.release.sha256,
+          // Instalação pelo PackageInstaller do Android: mostra a
+          // confirmação e devolve o resultado (sucesso ou o erro real).
+          usePackageInstaller: true,
         )
         .listen(onEvent);
   }
@@ -167,78 +226,163 @@ class _UpdateDialogState extends State<_UpdateDialog> {
         final percent = double.tryParse(event.value ?? '');
         setState(() => progress = percent == null ? null : percent / 100);
       case OtaStatus.INSTALLING:
+        if (step != _Step.installing) {
+          setState(() {
+            step = _Step.installing;
+            installerClosed = false;
+          });
+        }
       case OtaStatus.INSTALLATION_DONE:
-        // O instalador do Android assume daqui.
-        Navigator.of(context).pop();
-      case OtaStatus.PERMISSION_NOT_GRANTED_ERROR:
-        fail('Permita que o Tech News instale apps e tente de novo.');
-      case OtaStatus.CHECKSUM_ERROR:
-        fail('O download veio corrompido. Tente de novo.');
+        // O Android substitui o app; normalmente ele é reaberto sozinho.
+        break;
       case OtaStatus.ALREADY_RUNNING_ERROR:
         break;
+      case OtaStatus.PERMISSION_NOT_GRANTED_ERROR:
+        setState(() => step = _Step.permission);
+      case OtaStatus.CHECKSUM_ERROR:
+        fail('O download veio incompleto. Tente de novo.');
+      case OtaStatus.INSTALLATION_ERROR:
+        fail(installErrorMessage(event.value));
       default:
-        fail('Não foi possível baixar a atualização. Tente de novo.');
+        fail('Não foi possível baixar a atualização. Verifique sua internet.');
     }
+  }
+
+  String installErrorMessage(String? detail) {
+    final text = (detail ?? '').toLowerCase();
+    if (text.contains('abort') || text.contains('cancel')) {
+      return 'A instalação foi cancelada. Toque em "Tentar de novo" e depois '
+          'em "Atualizar" na janela do Android.';
+    }
+    if (text.contains('incompatible') || text.contains('signature')) {
+      return 'Esta versão não pode substituir a instalada. Desinstale o app '
+          'e instale pelo navegador.';
+    }
+    return 'O Android não concluiu a instalação.';
   }
 
   void fail(String message) {
     subscription?.cancel();
     setState(() {
-      downloading = false;
+      step = _Step.error;
       error = message;
     });
   }
 
+  Future<void> downloadInBrowser() async {
+    await launchUrl(
+      Uri.parse(widget.release.apkUrl),
+      mode: LaunchMode.externalApplication,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final release = widget.release;
+    final colors = Theme.of(context).colorScheme;
+    final muted = TextStyle(color: colors.onSurfaceVariant, height: 1.4);
 
-    return AlertDialog(
-      title: Text('Nova versão ${release.version}'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              release.notes.isNotEmpty
-                  ? release.notes
-                  : 'Uma nova versão do Tech News está disponível.',
-            ),
-            if (downloading) ...[
-              const SizedBox(height: 20),
-              LinearProgressIndicator(value: progress),
-              const SizedBox(height: 8),
-              Text(
-                progress == null
-                    ? 'Preparando download...'
-                    : 'Baixando... ${(progress! * 100).round()}%',
-              ),
-            ],
-            if (error != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-          ],
-        ),
+    final Widget body = switch (step) {
+      _Step.ask => Text(
+        'Há uma nova versão do Tech News (v${widget.release.version}). '
+        'Atualize para continuar usando o app.',
+        style: const TextStyle(height: 1.4),
       ),
-      actions: [
-        if (!downloading)
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Agora não'),
+      _Step.permission => Text(
+        'Para instalar, o Android precisa da sua permissão.\n\n'
+        'Toque em "Permitir", ative "Permitir desta fonte" e volte para o app. '
+        'A atualização continua sozinha.',
+        style: const TextStyle(height: 1.4),
+      ),
+      _Step.downloading => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LinearProgressIndicator(value: progress),
+          const SizedBox(height: 10),
+          Text(
+            progress == null
+                ? 'Preparando download...'
+                : 'Baixando... ${(progress! * 100).round()}%',
           ),
-        TextButton(
-          onPressed: downloading ? null : startUpdate,
-          child: const Text(
-            'Atualizar',
-            style: TextStyle(fontWeight: FontWeight.w800),
+        ],
+      ),
+      _Step.installing => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const LinearProgressIndicator(),
+          const SizedBox(height: 10),
+          Text(
+            installerClosed
+                ? 'A instalação não foi concluída. Se a janela do Android não '
+                      'apareceu, tente de novo.'
+                : 'Instalando... Confirme em "Atualizar" na janela do Android.',
+            style: const TextStyle(height: 1.4),
           ),
+        ],
+      ),
+      _Step.error => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            error ?? '',
+            style: TextStyle(color: colors.error, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Em celulares Samsung, confira se o "Bloqueador automático" está '
+            'desligado (Configurações > Segurança e privacidade). Se preferir, '
+            'baixe pelo navegador e instale por cima.',
+            style: muted,
+          ),
+        ],
+      ),
+    };
+
+    final List<Widget> actions = switch (step) {
+      _Step.ask => [
+        _primaryButton('Atualizar agora', start),
+      ],
+      _Step.permission => [
+        TextButton(onPressed: start, child: const Text('Já permiti')),
+        _primaryButton(
+          'Permitir',
+          () => _installer.invokeMethod('openInstallSettings'),
         ),
       ],
+      _Step.downloading => const [],
+      _Step.installing => installerClosed
+          ? [
+              TextButton(
+                onPressed: downloadInBrowser,
+                child: const Text('Baixar pelo navegador'),
+              ),
+              _primaryButton('Tentar de novo', start),
+            ]
+          : const [],
+      _Step.error => [
+        TextButton(
+          onPressed: downloadInBrowser,
+          child: const Text('Baixar pelo navegador'),
+        ),
+        _primaryButton('Tentar de novo', start),
+      ],
+    };
+
+    // PopScope: o botão "voltar" não fecha (atualização obrigatória).
+    return PopScope(
+      canPop: false,
+      child: AlertDialog(
+        icon: Icon(Icons.system_update_rounded, color: colors.primary),
+        title: const Text('Atualização disponível'),
+        content: AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          child: body,
+        ),
+        actionsOverflowButtonSpacing: 8,
+        actions: actions,
+      ),
     );
   }
 }

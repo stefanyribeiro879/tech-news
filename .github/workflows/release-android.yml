@@ -1,15 +1,19 @@
-# Publica uma versão nova do app Android.
-# Disparo: push de uma tag "v<versão>", ex.: git tag -a v1.0.1 -m "Novidades" && git push origin v1.0.1
+# Publica um PACOTE de atualização do app Android.
+# As mudanças vão se acumulando na main; quando o pacote estiver pronto:
+#   1. aumente "version:" no pubspec.yaml e faça push;
+#   2. GitHub > Actions > "Release Android" > Run workflow.
+# (Também dispara com push de tag "v<versão>", ex.: git tag v1.1.0.)
 # Resultado: uma Release no GitHub com o APK. O app instalado encontra essa
-# Release (lib/app_update.dart) e oferece a atualização ao usuário.
+# Release (lib/app_update.dart) e obriga a atualização.
 name: Release Android
 
 on:
+  workflow_dispatch:
   push:
     tags: ['v*']
 
 permissions:
-  contents: write # necessário para criar a Release
+  contents: write # necessário para criar a Release (e a tag)
 
 jobs:
   build:
@@ -17,14 +21,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Conferir se a tag bate com a versão do pubspec.yaml
+      - name: Descobrir a versão do pacote
+        id: version
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
           PUBSPEC_VERSION="$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')"
-          if [ "$TAG_VERSION" != "$PUBSPEC_VERSION" ]; then
+          TAG="v$PUBSPEC_VERSION"
+
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_NAME" != "$TAG" ]; then
             echo "::error::A tag é $GITHUB_REF_NAME, mas o pubspec.yaml está em $PUBSPEC_VERSION. Atualize o 'version:' antes de criar a tag."
             exit 1
           fi
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+            echo "::error::A versão $PUBSPEC_VERSION já foi publicada. Aumente o 'version:' no pubspec.yaml antes de publicar um novo pacote."
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v4
         with:
@@ -56,23 +69,23 @@ jobs:
 
       - run: flutter pub get
 
+      - name: Rodar os testes
+        run: flutter test
+
       - name: Gerar APK
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
         run: |
-          # Com a variável SUPABASE_URL definida no GitHub, o app usa o proxy.
+          # Com a variável SUPABASE_URL definida no GitHub, ela substitui o proxy padrão.
           EXTRA=""
           if [ -n "$SUPABASE_URL" ]; then EXTRA="--dart-define=SUPABASE_URL=$SUPABASE_URL"; fi
           flutter build apk --release $EXTRA
           mv build/app/outputs/flutter-apk/app-release.apk tech-news.apk
 
-      - name: Ler a mensagem da tag (vira o texto "O que há de novo")
-        run: |
-          git fetch --force origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME"
-          git tag -l --format='%(contents)' "$GITHUB_REF_NAME" > release-notes.txt
-
       - uses: softprops/action-gh-release@v2
         with:
-          name: Tech News ${{ github.ref_name }}
-          body_path: release-notes.txt
+          tag_name: ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: Tech News ${{ steps.version.outputs.tag }}
+          body: Pacote de atualização ${{ steps.version.outputs.tag }}.
           files: tech-news.apk

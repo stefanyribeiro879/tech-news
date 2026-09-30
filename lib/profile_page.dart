@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_settings.dart';
+import 'appearance_page.dart';
 import 'app_update.dart';
 import 'supabase_service.dart';
 import 'theme.dart';
@@ -69,21 +70,14 @@ class ProfilePage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    colors.primary,
-                    Color.lerp(colors.primary, AppColors.peach, 0.55)!,
-                  ],
-                ),
+                gradient: context.accentGradient,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundColor: Colors.white,
+                    backgroundColor: colors.onPrimary,
                     child: Text(
                       profile.initial,
                       style: TextStyle(
@@ -100,8 +94,8 @@ class ProfilePage extends StatelessWidget {
                       children: [
                         Text(
                           profile.name.isNotEmpty ? profile.name : 'Leitor(a)',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: colors.onPrimary,
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
                           ),
@@ -109,7 +103,9 @@ class ProfilePage extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           profile.email,
-                          style: const TextStyle(color: Colors.white70),
+                          style: TextStyle(
+                            color: colors.onPrimary.withValues(alpha: 0.75),
+                          ),
                         ),
                       ],
                     ),
@@ -139,15 +135,17 @@ class ProfilePage extends StatelessWidget {
 
             _SettingsCard(
               children: [
-                SwitchListTile(
-                  value: appSettings.themeMode == ThemeMode.dark,
-                  onChanged: appSettings.setDarkMode,
-                  secondary: const Icon(Icons.dark_mode_outlined),
+                ListTile(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AppearancePage()),
+                  ),
+                  leading: const Icon(Icons.palette_outlined),
                   title: const Text(
-                    'Tema escuro',
+                    'Aparência',
                     style: TextStyle(fontWeight: FontWeight.w800),
                   ),
-                  subtitle: const Text('Mais confortável à noite'),
+                  subtitle: Text(appSettings.look.label),
+                  trailing: const Icon(Icons.chevron_right_rounded),
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 SwitchListTile(

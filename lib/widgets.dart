@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'article_page.dart';
+import 'motion.dart';
 import 'news_api.dart';
 import 'saved_articles.dart';
 import 'theme.dart';
@@ -137,8 +139,8 @@ class NewsImage extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            topic.color.withValues(alpha: 0.35),
-            topic.color.withValues(alpha: 0.12),
+            topic.tint(context).withValues(alpha: 0.30),
+            topic.tint(context).withValues(alpha: 0.10),
           ],
         ),
       ),
@@ -163,11 +165,15 @@ class TopicPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topic = topicOf(category);
+    // Sobre a foto: fundo na cor do tema (branco no preto e branco).
+    final onImageText = context.palette.monochrome
+        ? Colors.black
+        : Colors.white;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: onImage ? topic.color : topic.background(context),
+        color: onImage ? topic.tint(context) : topic.background(context),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -176,7 +182,7 @@ class TopicPill extends StatelessWidget {
           Icon(
             topic.icon,
             size: 13,
-            color: onImage ? Colors.white : topic.foreground(context),
+            color: onImage ? onImageText : topic.foreground(context),
           ),
           const SizedBox(width: 5),
           Flexible(
@@ -187,7 +193,7 @@ class TopicPill extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w800,
-                color: onImage ? Colors.white : topic.foreground(context),
+                color: onImage ? onImageText : topic.foreground(context),
               ),
             ),
           ),
@@ -208,7 +214,8 @@ class FeaturedNewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    return Pressable(
+      child: Material(
       borderRadius: BorderRadius.circular(26),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -255,19 +262,29 @@ class FeaturedNewsCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    '${article.source} · ${article.time}',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${article.source} · ${article.time}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      ReadMoreButton(article: article, onImage: true),
+                    ],
                   ),
                 ],
               ),
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -288,6 +305,7 @@ class CompactNewsCard extends StatelessWidget {
 
     return SizedBox(
       width: 230,
+      child: Pressable(
       child: Material(
         color: colors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(22),
@@ -345,6 +363,7 @@ class CompactNewsCard extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
   }
 }
@@ -364,6 +383,7 @@ class NewsListTile extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
+      child: Pressable(
       child: Material(
         color: colors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(20),
@@ -410,11 +430,286 @@ class NewsListTile extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: ReadMoreButton(article: article),
+                      ),
                     ],
                   ),
                 ),
                 BookmarkButton(article: article),
               ],
+            ),
+          ),
+        ),
+      ),
+      ),
+    );
+  }
+}
+
+// ======================================================
+// BOTÃO "LER MAIS"
+// Abre a notícia dentro do app (ArticlePage).
+// ======================================================
+
+class ReadMoreButton extends StatelessWidget {
+  final NewsArticle article;
+  final bool onImage;
+
+  const ReadMoreButton({
+    super.key,
+    required this.article,
+    this.onImage = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (onImage) {
+      return FilledButton.icon(
+        onPressed: () => openArticle(context, article),
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(0, 36),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          textStyle: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        iconAlignment: IconAlignment.end,
+        icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+        label: const Text('Ler mais'),
+      );
+    }
+
+    return TextButton.icon(
+      onPressed: () => openArticle(context, article),
+      style: TextButton.styleFrom(
+        minimumSize: const Size(0, 32),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        visualDensity: VisualDensity.compact,
+        foregroundColor: context.colors.primary,
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+      ),
+      iconAlignment: IconAlignment.end,
+      icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+      label: const Text('Ler mais'),
+    );
+  }
+}
+
+// ======================================================
+// LISTA PAGINADA
+// Mostra poucas notícias por vez (padrão: 3) com botões de página,
+// em vez de uma rolagem sem fim.
+// ======================================================
+
+class PagedNewsList extends StatefulWidget {
+  final List<NewsArticle> articles;
+  final int perPage;
+
+  const PagedNewsList({super.key, required this.articles, this.perPage = 3});
+
+  @override
+  State<PagedNewsList> createState() => _PagedNewsListState();
+}
+
+class _PagedNewsListState extends State<PagedNewsList> {
+  final topKey = GlobalKey();
+  int page = 0;
+  bool forward = true;
+
+  int get pageCount => (widget.articles.length / widget.perPage).ceil();
+
+  @override
+  void didUpdateWidget(PagedNewsList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Lista nova (outro tema, busca, atualização): volta para a página 1.
+    final sameList = listEquals(
+      oldWidget.articles.map((a) => a.id).toList(),
+      widget.articles.map((a) => a.id).toList(),
+    );
+    if (!sameList || page >= pageCount) page = 0;
+  }
+
+  void goTo(int next) {
+    if (next == page || next < 0 || next >= pageCount) return;
+    setState(() {
+      forward = next > page;
+      page = next;
+    });
+
+    // Traz o começo da lista para a tela, se a pessoa rolou para baixo.
+    final target = topKey.currentContext;
+    if (target != null) {
+      Scrollable.ensureVisible(
+        target,
+        duration: motionDuration(context),
+        curve: Curves.easeOutCubic,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = widget.articles
+        .skip(page * widget.perPage)
+        .take(widget.perPage)
+        .toList();
+    final slide = context.motion == MotionLevel.simple ? 0.0 : 0.08;
+
+    return Column(
+      key: topKey,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AnimatedSwitcher(
+          duration: motionDuration(context),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          layoutBuilder: (current, previous) => Stack(
+            alignment: Alignment.topCenter,
+            children: [...previous, if (current != null) current],
+          ),
+          // A página nova entra pelo lado para onde a pessoa avançou.
+          transitionBuilder: (child, animation) {
+            final incoming = child.key == ValueKey(page);
+            final dx = incoming == forward ? slide : -slide;
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween(
+                  begin: Offset(dx, 0),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              ),
+            );
+          },
+          child: Column(
+            key: ValueKey(page),
+            children: [
+              for (var i = 0; i < items.length; i++)
+                Appear(index: i, child: NewsListTile(article: items[i])),
+            ],
+          ),
+        ),
+        if (pageCount > 1)
+          _Pager(page: page, pageCount: pageCount, onChanged: goTo),
+      ],
+    );
+  }
+}
+
+class _Pager extends StatelessWidget {
+  final int page;
+  final int pageCount;
+  final ValueChanged<int> onChanged;
+
+  const _Pager({
+    required this.page,
+    required this.pageCount,
+    required this.onChanged,
+  });
+
+  // Números visíveis: primeira, última e as vizinhas da atual (null = "…").
+  List<int?> get visiblePages {
+    final pages = <int?>[];
+    for (var i = 0; i < pageCount; i++) {
+      final near = (i - page).abs() <= 1;
+      if (i == 0 || i == pageCount - 1 || near) {
+        pages.add(i);
+      } else if (pages.isNotEmpty && pages.last != null) {
+        pages.add(null);
+      }
+    }
+    return pages;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton.filledTonal(
+            tooltip: 'Anteriores',
+            onPressed: page > 0 ? () => onChanged(page - 1) : null,
+            icon: const Icon(Icons.chevron_left_rounded),
+          ),
+          const SizedBox(width: 6),
+          for (final number in visiblePages)
+            if (number == null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  '…',
+                  style: TextStyle(color: colors.onSurfaceVariant),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: _PageDot(
+                  number: number + 1,
+                  selected: number == page,
+                  onTap: () => onChanged(number),
+                ),
+              ),
+          const SizedBox(width: 6),
+          IconButton.filledTonal(
+            tooltip: 'Próximas',
+            onPressed: page < pageCount - 1 ? () => onChanged(page + 1) : null,
+            icon: const Icon(Icons.chevron_right_rounded),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PageDot extends StatelessWidget {
+  final int number;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _PageDot({
+    required this.number,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: 'Página $number',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: motionDuration(context, base: 200),
+          width: selected ? 40 : 34,
+          height: 34,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? colors.primary : colors.surfaceContainer,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            '$number',
+            style: TextStyle(
+              color: selected ? colors.onPrimary : colors.onSurfaceVariant,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ),

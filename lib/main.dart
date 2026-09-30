@@ -9,6 +9,8 @@ import 'explore_page.dart';
 import 'favorite_topics_page.dart';
 import 'home_page.dart';
 import 'login_page.dart';
+import 'logo.dart';
+import 'motion.dart';
 import 'profile_page.dart';
 import 'saved_articles.dart';
 import 'saved_page.dart';
@@ -39,9 +41,9 @@ class TechNewsApp extends StatelessWidget {
       builder: (context, _) => MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Tech News',
-        theme: buildTheme(Brightness.light),
-        darkTheme: buildTheme(Brightness.dark),
-        themeMode: appSettings.themeMode,
+        // Trocar a aparência anima as cores do app inteiro.
+        theme: buildTheme(appSettings.look),
+        themeAnimationDuration: const Duration(milliseconds: 450),
         home: const AuthGate(),
       ),
     );
@@ -201,16 +203,7 @@ class _SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 84,
-              height: 84,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Image.asset('assets/images/logo.png'),
-            ),
+            const Appear(child: TechNewsLogo(height: 64)),
             const SizedBox(height: 24),
             const CircularProgressIndicator(),
             const SizedBox(height: 14),
@@ -313,7 +306,9 @@ class _AppShellState extends State<AppShell> {
     ];
 
     return Scaffold(
-      body: IndexedStack(index: selectedPage, children: pages),
+      body: AmbientBackground(
+        child: IndexedStack(index: selectedPage, children: pages),
+      ),
       bottomNavigationBar: ListenableBuilder(
         listenable: savedArticles,
         builder: (context, _) {

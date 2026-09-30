@@ -15,12 +15,21 @@ class ArticlePage extends StatelessWidget {
   const ArticlePage({super.key, required this.article});
 
   // Muitos feeds trazem só o começo da matéria; o texto completo fica no site.
+  // Abre o site dentro do app (navegador embutido do Android); se o aparelho
+  // não suportar, cai para o navegador externo.
   Future<void> openOriginal(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
-    final opened = await launchUrl(
-      Uri.parse(article.url),
-      mode: LaunchMode.externalApplication,
-    );
+    final url = Uri.parse(article.url);
+
+    var opened = false;
+    try {
+      opened = await launchUrl(url, mode: LaunchMode.inAppBrowserView);
+    } catch (_) {
+      opened = false;
+    }
+    if (!opened) {
+      opened = await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
 
     if (!opened) {
       messenger.showSnackBar(
@@ -189,7 +198,7 @@ class ArticlePage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             const Text(
-                              'Quer ler a matéria completa?',
+                              'Quer continuar lendo?',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w900,
@@ -197,14 +206,15 @@ class ArticlePage extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'O texto acima é o trecho enviado pelo ${article.source}.',
+                              'O texto acima é o trecho enviado pelo ${article.source}. '
+                              'A matéria completa abre aqui mesmo, no app.',
                               style: TextStyle(color: colors.onSurfaceVariant),
                             ),
                             const SizedBox(height: 14),
                             FilledButton.icon(
                               onPressed: () => openOriginal(context),
-                              icon: const Icon(Icons.open_in_new_rounded),
-                              label: Text('Abrir no ${article.source}'),
+                              icon: const Icon(Icons.chrome_reader_mode_outlined),
+                              label: const Text('Ler matéria completa'),
                             ),
                           ],
                         ),

@@ -50,7 +50,7 @@ class SavedPage extends StatelessWidget {
                   onAction: onGoHome,
                 )
               else
-                ...saved.map((article) => NewsListTile(article: article)),
+                PagedNewsList(articles: saved),
             ],
           );
         },

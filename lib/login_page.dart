@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_settings.dart';
+import 'logo.dart';
+import 'motion.dart';
 import 'supabase_service.dart';
 import 'theme.dart';
 
@@ -679,59 +681,46 @@ class AuthLayout extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: colors.outlineVariant),
-                        ),
-                        child: Image.asset('assets/images/logo.png'),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Tech News',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Appear(child: TechNewsLogo(height: 44)),
                   ),
 
                   const SizedBox(height: 36),
 
-                  Text(emoji, style: const TextStyle(fontSize: 40)),
-
-                  const SizedBox(height: 10),
-
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 30,
-                      height: 1.1,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: colors.onSurfaceVariant,
-                      fontSize: 15,
-                      height: 1.4,
+                  // Cada tela (login, cadastro, código...) entra em cascata.
+                  Appear(
+                    key: ValueKey(title),
+                    index: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(emoji, style: const TextStyle(fontSize: 40)),
+                        const SizedBox(height: 10),
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 30,
+                            height: 1.1,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            color: colors.onSurfaceVariant,
+                            fontSize: 15,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
                   const SizedBox(height: 28),
 
-                  child,
+                  Appear(key: ValueKey('$title-form'), index: 2, child: child),
                 ],
               ),
             ),
@@ -908,12 +897,12 @@ class LoadingButton extends StatelessWidget {
     return FilledButton(
       onPressed: loading ? null : onPressed,
       child: loading
-          ? const SizedBox(
+          ? SizedBox(
               width: 22,
               height: 22,
               child: CircularProgressIndicator(
                 strokeWidth: 2.4,
-                color: Colors.white,
+                color: context.colors.onPrimary,
               ),
             )
           : Text(label),

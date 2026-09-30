@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:tech_news/appearance_page.dart';
 import 'package:tech_news/article_page.dart';
 import 'package:tech_news/favorite_topics_page.dart';
 import 'package:tech_news/home_page.dart';
@@ -20,9 +21,11 @@ import 'package:tech_news/theme.dart';
 import 'package:tech_news/widgets.dart';
 
 // Tema sem Google Fonts (os testes não acessam a internet).
-ThemeData testTheme(Brightness brightness) {
-  final theme = buildTheme(brightness);
-  return theme.copyWith(textTheme: ThemeData(brightness: brightness).textTheme);
+ThemeData testTheme(AppLook look) {
+  final theme = buildTheme(look);
+  return theme.copyWith(
+    textTheme: ThemeData(brightness: look.brightness).textTheme,
+  );
 }
 
 final article = NewsArticle(
@@ -52,7 +55,7 @@ const sizes = {
 Future<void> pumpScreen(
   WidgetTester tester,
   Size size,
-  Brightness brightness,
+  AppLook look,
   Widget screen,
 ) async {
   tester.view.physicalSize = size;
@@ -60,7 +63,7 @@ Future<void> pumpScreen(
   addTearDown(tester.view.reset);
 
   await tester.pumpWidget(
-    MaterialApp(theme: testTheme(brightness), home: screen),
+    MaterialApp(theme: testTheme(look), home: screen),
   );
   await tester.pump(const Duration(milliseconds: 300));
 }
@@ -91,6 +94,15 @@ void main() {
           ),
         ),
     'notícia': () => ArticlePage(article: article),
+    'aparência': () => const AppearancePage(),
+    'lista paginada': () => Scaffold(
+          body: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              PagedNewsList(articles: List.filled(8, article)),
+            ],
+          ),
+        ),
     'cartões': () => Scaffold(
           body: ListView(
             padding: const EdgeInsets.all(20),
@@ -150,7 +162,7 @@ void main() {
       await pumpScreen(
         tester,
         size.value,
-        Brightness.light,
+        AppLook.light,
         Scaffold(
           body: HomePage(
             profile: profile,
@@ -185,13 +197,59 @@ void main() {
     });
   }
 
-  for (final brightness in Brightness.values) {
+  testWidgets('lista paginada mostra 3 notícias por vez', (tester) async {
+    final many = List.generate(
+      8,
+      (i) => NewsArticle(
+        id: 'n$i',
+        category: 'Mobile',
+        title: 'Notícia número $i',
+        summary: 'Resumo',
+        content: 'Conteúdo',
+        source: 'Tecnoblog',
+        url: 'https://example.com/$i',
+        imageUrl: null,
+        publishedAt: DateTime.now(),
+      ),
+    );
+
+    await pumpScreen(
+      tester,
+      sizes['celular pequeno']!,
+      AppLook.light,
+      Scaffold(
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [PagedNewsList(articles: many)],
+        ),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 1));
+
+    // Página 1: notícias 0, 1 e 2.
+    expect(find.byType(NewsListTile), findsNWidgets(3));
+    expect(find.text('Notícia número 0'), findsOneWidget);
+    expect(find.text('Ler mais'), findsNWidgets(3));
+
+    // Avança duas páginas: a última (3) tem só 2 notícias (6 e 7).
+    for (var i = 0; i < 2; i++) {
+      await tester.tap(find.byTooltip('Próximas'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+    }
+    expect(find.byType(NewsListTile), findsNWidgets(2));
+    expect(find.text('Notícia número 7'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  // Cada tela em todas as aparências (cores, logo e animações diferentes).
+  for (final look in AppLook.values) {
     for (final size in sizes.entries) {
       for (final screen in screens.entries) {
         testWidgets(
-          '${screen.key} · ${size.key} · ${brightness.name}',
+          '${screen.key} · ${size.key} · ${look.label}',
           (tester) async {
-            await pumpScreen(tester, size.value, brightness, screen.value());
+            await pumpScreen(tester, size.value, look, screen.value());
             expect(tester.takeException(), isNull);
           },
         );
