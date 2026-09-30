@@ -24,4 +24,4 @@ jobs:
         run: flutter analyze --no-fatal-infos
 
       - name: Rodar os testes
-        run: flutter test
+        run: flutter test --reporter github
