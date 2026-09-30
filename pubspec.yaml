@@ -41,6 +41,7 @@ dependencies:
   google_fonts: ^8.2.1
   package_info_plus: ^10.2.1
   ota_update: ^7.1.0
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

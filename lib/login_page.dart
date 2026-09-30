@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_settings.dart';
+import 'install_hint.dart';
 import 'logo.dart';
 import 'motion.dart';
 import 'supabase_service.dart';
@@ -687,6 +688,9 @@ class AuthLayout extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 36),
+
+                  // Só aparece no navegador do celular (ex.: Safari do iPhone).
+                  const InstallAppBanner(),
 
                   // Cada tela (login, cadastro, código...) entra em cascata.
                   Appear(

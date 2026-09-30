@@ -89,3 +89,36 @@ jobs:
           name: Tech News ${{ steps.version.outputs.tag }}
           body: Pacote de atualização ${{ steps.version.outputs.tag }}.
           files: tech-news.apk
+
+  # Versão web (usada no iPhone como app instalável): publica no GitHub Pages
+  # junto com o APK, só depois que o build e os testes passarem.
+  # Requer: Settings > Pages > Source = "GitHub Actions".
+  web:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Gerar o site
+        run: flutter build web --release --base-href /tech-news/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

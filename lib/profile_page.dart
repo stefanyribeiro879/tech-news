@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_settings.dart';
 import 'appearance_page.dart';
+import 'install_hint.dart';
 import 'app_update.dart';
 import 'supabase_service.dart';
 import 'theme.dart';
@@ -181,6 +182,18 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (installSuggestion != null) ...[
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  ListTile(
+                    onTap: () => showInstallInstructions(context),
+                    leading: const Icon(Icons.install_mobile_rounded),
+                    title: const Text(
+                      'Instalar o app',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    subtitle: const Text('Ícone na tela de início, em tela cheia'),
+                  ),
+                ],
                 if (appUpdateSupported) ...[
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   ListTile(
