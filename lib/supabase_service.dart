@@ -85,6 +85,31 @@ class SupabaseService {
 
   static Future<void> signOut() => _db.auth.signOut();
 
+  // ------------------------------------------------------
+  // ESQUECI A SENHA
+  // 1. Envia um e-mail com código de 6 dígitos ({{ .Token }} no modelo
+  //    "Reset password" do Supabase).
+  // 2. Validar o código abre uma sessão e dispara o evento
+  //    AuthChangeEvent.passwordRecovery; o AuthGate mostra a tela de nova senha.
+  // 3. Grava a nova senha.
+  // ------------------------------------------------------
+
+  static Future<void> sendPasswordResetCode(String email) {
+    return _db.auth.resetPasswordForEmail(email);
+  }
+
+  static Future<void> verifyPasswordResetCode(String email, String code) {
+    return _db.auth.verifyOTP(
+      email: email,
+      token: code,
+      type: OtpType.recovery,
+    );
+  }
+
+  static Future<void> updatePassword(String password) {
+    return _db.auth.updateUser(UserAttributes(password: password));
+  }
+
   // Chamado ao abrir o app: sem "manter conectado", começa deslogado.
   static Future<void> signOutIfNotRemembered(bool rememberLogin) async {
     if (rememberLogin || currentUser == null) return;
@@ -155,11 +180,21 @@ String authErrorMessage(Object error) {
     if (message.contains('already registered')) {
       return 'Já existe uma conta com esse e-mail.';
     }
+    if (error.code == 'otp_expired' ||
+        message.contains('token has expired or is invalid')) {
+      return 'Código inválido ou expirado. Confira o e-mail ou peça outro.';
+    }
+    if (error.code == 'same_password' || message.contains('different from')) {
+      return 'A nova senha precisa ser diferente da atual.';
+    }
     if (message.contains('password')) {
       return 'A senha precisa ter pelo menos 6 caracteres.';
     }
     if (message.contains('rate limit')) {
       return 'Muitas tentativas. Aguarde alguns minutos.';
+    }
+    if (message.contains('for security purposes')) {
+      return 'Aguarde 1 minuto antes de pedir outro código.';
     }
     return error.message;
   }

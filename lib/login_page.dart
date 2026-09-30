@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_settings.dart';
 import 'supabase_service.dart';
@@ -17,36 +18,51 @@ class AuthFlow extends StatefulWidget {
   State<AuthFlow> createState() => _AuthFlowState();
 }
 
+enum _AuthScreen { signUp, login, forgotPassword }
+
 class _AuthFlowState extends State<AuthFlow> {
-  late bool showSignUp = !appSettings.hasAccountOnDevice;
+  late _AuthScreen screen = appSettings.hasAccountOnDevice
+      ? _AuthScreen.login
+      : _AuthScreen.signUp;
 
   // Mensagem mostrada no login depois de criar a conta (ex.: confirmar e-mail).
   String? loginNotice;
+
+  // E-mail digitado no login, para já preencher o "esqueci a senha".
+  String forgotEmail = '';
+
+  void goTo(_AuthScreen next, {String? notice}) {
+    setState(() {
+      screen = next;
+      loginNotice = notice;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 250),
-      child: showSignUp
-          ? SignUpForm(
-              key: const ValueKey('signup'),
-              onGoToLogin: ({String? notice}) {
-                setState(() {
-                  showSignUp = false;
-                  loginNotice = notice;
-                });
-              },
-            )
-          : LoginForm(
-              key: const ValueKey('login'),
-              notice: loginNotice,
-              onGoToSignUp: () {
-                setState(() {
-                  showSignUp = true;
-                  loginNotice = null;
-                });
-              },
-            ),
+      child: switch (screen) {
+        _AuthScreen.signUp => SignUpForm(
+          key: const ValueKey('signup'),
+          onGoToLogin: ({String? notice}) =>
+              goTo(_AuthScreen.login, notice: notice),
+        ),
+        _AuthScreen.login => LoginForm(
+          key: const ValueKey('login'),
+          notice: loginNotice,
+          onGoToSignUp: () => goTo(_AuthScreen.signUp),
+          onForgotPassword: (email) {
+            forgotEmail = email;
+            goTo(_AuthScreen.forgotPassword);
+          },
+        ),
+        _AuthScreen.forgotPassword => ForgotPasswordForm(
+          key: const ValueKey('forgot'),
+          initialEmail: forgotEmail,
+          onBackToLogin: () => goTo(_AuthScreen.login),
+        ),
+      },
     );
   }
 }
@@ -58,8 +74,14 @@ class _AuthFlowState extends State<AuthFlow> {
 class LoginForm extends StatefulWidget {
   final String? notice;
   final VoidCallback onGoToSignUp;
+  final ValueChanged<String> onForgotPassword;
 
-  const LoginForm({super.key, this.notice, required this.onGoToSignUp});
+  const LoginForm({
+    super.key,
+    this.notice,
+    required this.onGoToSignUp,
+    required this.onForgotPassword,
+  });
 
   @override
   State<LoginForm> createState() => _LoginFormState();
@@ -132,6 +154,19 @@ class _LoginFormState extends State<LoginForm> {
                 });
               },
               onSubmitted: submit,
+            ),
+
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: loading
+                    ? null
+                    : () => widget.onForgotPassword(emailController.text.trim()),
+                child: const Text(
+                  'Esqueci minha senha',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
             ),
 
             RememberLoginCheckbox(
@@ -313,6 +348,297 @@ class _SignUpFormState extends State<SignUpForm> {
               question: 'Já tem conta?',
               action: 'Entrar',
               onTap: loading ? null : () => widget.onGoToLogin(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ======================================================
+// ESQUECI A SENHA
+// Passo 1: e-mail → o Supabase envia um código de 6 dígitos.
+// Passo 2: código → ao validar, o Supabase abre uma sessão de recuperação e
+// o AuthGate (main.dart) troca esta tela pela NewPasswordForm.
+// ======================================================
+
+class ForgotPasswordForm extends StatefulWidget {
+  final String initialEmail;
+  final VoidCallback onBackToLogin;
+
+  const ForgotPasswordForm({
+    super.key,
+    required this.initialEmail,
+    required this.onBackToLogin,
+  });
+
+  @override
+  State<ForgotPasswordForm> createState() => _ForgotPasswordFormState();
+}
+
+class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
+  final formKey = GlobalKey<FormState>();
+  late final emailController = TextEditingController(text: widget.initialEmail);
+  final codeController = TextEditingController();
+
+  bool codeSent = false;
+  bool loading = false;
+  String? error;
+  String? notice;
+
+  String get email => emailController.text.trim();
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    codeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> sendCode() async {
+    if (!formKey.currentState!.validate()) return;
+
+    setState(() {
+      loading = true;
+      error = null;
+    });
+
+    try {
+      await SupabaseService.sendPasswordResetCode(email);
+      if (!mounted) return;
+      codeController.clear();
+      setState(() {
+        loading = false;
+        codeSent = true;
+        // O Supabase não revela se o e-mail tem conta (evita descobrir contas).
+        notice =
+            'Se existir uma conta com $email, enviamos um código de 6 dígitos. '
+            'Confira também o spam.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        error = authErrorMessage(e);
+      });
+    }
+  }
+
+  Future<void> verifyCode() async {
+    if (!formKey.currentState!.validate()) return;
+
+    setState(() {
+      loading = true;
+      error = null;
+    });
+
+    try {
+      // Se der certo, o AuthGate já troca para a tela de nova senha.
+      await SupabaseService.verifyPasswordResetCode(email, codeController.text);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        error = authErrorMessage(e);
+      });
+    }
+  }
+
+  void useAnotherEmail() {
+    setState(() {
+      codeSent = false;
+      notice = null;
+      error = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AuthLayout(
+      emoji: codeSent ? '✉️' : '🔑',
+      title: codeSent ? 'Digite o código' : 'Esqueceu a senha?',
+      subtitle: codeSent
+          ? 'Digite o código de 6 dígitos que chegou no seu e-mail.'
+          : 'Informe o e-mail da sua conta. Vamos enviar um código para '
+                'você criar uma nova senha.',
+      child: Form(
+        key: formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (notice != null) NoticeBox(notice!),
+
+            if (!codeSent)
+              EmailField(controller: emailController)
+            else
+              TextFormField(
+                controller: codeController,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                autofillHints: const [AutofillHints.oneTimeCode],
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(6),
+                ],
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 10,
+                ),
+                onFieldSubmitted: (_) => verifyCode(),
+                decoration: const InputDecoration(
+                  labelText: 'Código de verificação',
+                  prefixIcon: Icon(Icons.pin_outlined),
+                ),
+                validator: (value) =>
+                    (value?.length ?? 0) != 6 ? 'O código tem 6 dígitos' : null,
+              ),
+
+            if (error != null) ErrorText(error!),
+
+            const SizedBox(height: 16),
+
+            LoadingButton(
+              label: codeSent ? 'Confirmar código' : 'Enviar código',
+              loading: loading,
+              onPressed: codeSent ? verifyCode : sendCode,
+            ),
+
+            if (codeSent) ...[
+              const SizedBox(height: 10),
+              SwitchAuthLink(
+                question: 'Não recebeu?',
+                action: 'Reenviar código',
+                onTap: loading ? null : sendCode,
+              ),
+              TextButton(
+                onPressed: loading ? null : useAnotherEmail,
+                child: const Text('Usar outro e-mail'),
+              ),
+            ],
+
+            const SizedBox(height: 8),
+
+            SwitchAuthLink(
+              question: 'Lembrou a senha?',
+              action: 'Entrar',
+              onTap: loading ? null : widget.onBackToLogin,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ======================================================
+// NOVA SENHA
+// Aparece depois que o código foi validado (sessão de recuperação ativa).
+// ======================================================
+
+class NewPasswordForm extends StatefulWidget {
+  final VoidCallback onDone;
+
+  const NewPasswordForm({super.key, required this.onDone});
+
+  @override
+  State<NewPasswordForm> createState() => _NewPasswordFormState();
+}
+
+class _NewPasswordFormState extends State<NewPasswordForm> {
+  final formKey = GlobalKey<FormState>();
+  final passwordController = TextEditingController();
+  final confirmController = TextEditingController();
+
+  bool showPassword = false;
+  bool loading = false;
+  String? error;
+
+  @override
+  void dispose() {
+    passwordController.dispose();
+    confirmController.dispose();
+    super.dispose();
+  }
+
+  Future<void> submit() async {
+    if (!formKey.currentState!.validate()) return;
+
+    setState(() {
+      loading = true;
+      error = null;
+    });
+
+    try {
+      await SupabaseService.updatePassword(passwordController.text);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Senha alterada! Você já está conectado.')),
+      );
+      widget.onDone();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        error = authErrorMessage(e);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AuthLayout(
+      emoji: '🔒',
+      title: 'Crie uma nova senha',
+      subtitle: 'Código confirmado! Agora escolha a sua nova senha.',
+      child: Form(
+        key: formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            PasswordField(
+              controller: passwordController,
+              visible: showPassword,
+              onToggleVisible: () {
+                setState(() {
+                  showPassword = !showPassword;
+                });
+              },
+            ),
+
+            const SizedBox(height: 14),
+
+            TextFormField(
+              controller: confirmController,
+              obscureText: !showPassword,
+              onFieldSubmitted: (_) => submit(),
+              decoration: const InputDecoration(
+                labelText: 'Confirme a nova senha',
+                prefixIcon: Icon(Icons.lock_outline_rounded),
+              ),
+              validator: (value) => value != passwordController.text
+                  ? 'As senhas não são iguais'
+                  : null,
+            ),
+
+            if (error != null) ErrorText(error!),
+
+            const SizedBox(height: 16),
+
+            LoadingButton(
+              label: 'Salvar nova senha',
+              loading: loading,
+              onPressed: submit,
+            ),
+
+            const SizedBox(height: 8),
+
+            // Desistir encerra a sessão de recuperação e volta ao login.
+            TextButton(
+              onPressed: loading ? null : SupabaseService.signOut,
+              child: const Text('Cancelar'),
             ),
           ],
         ),

@@ -68,6 +68,9 @@ class _AuthGateState extends State<AuthGate> {
   bool loadingUser = false;
   String? error;
 
+  // Código do "esqueci a senha" validado: falta escolher a nova senha.
+  bool recoveringPassword = false;
+
   @override
   void initState() {
     super.initState();
@@ -88,12 +91,19 @@ class _AuthGateState extends State<AuthGate> {
   void onAuthChange(AuthState state) {
     final user = state.session?.user;
 
+    if (state.event == AuthChangeEvent.passwordRecovery) {
+      setState(() {
+        recoveringPassword = true;
+      });
+    }
+
     if (user == null) {
       savedArticles.clear();
       setState(() {
         profile = null;
         loadedUserId = null;
         error = null;
+        recoveringPassword = false;
       });
     } else if (user.id != loadedUserId && !loadingUser) {
       loadUser();
@@ -137,6 +147,14 @@ class _AuthGateState extends State<AuthGate> {
   Widget build(BuildContext context) {
     if (SupabaseService.currentUser == null) {
       return const AuthFlow();
+    }
+
+    if (recoveringPassword) {
+      return NewPasswordForm(
+        onDone: () => setState(() {
+          recoveringPassword = false;
+        }),
+      );
     }
 
     if (error != null) {

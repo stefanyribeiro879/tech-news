@@ -42,6 +42,14 @@ Endereço da API usado pelo app ([lib/news_api.dart](lib/news_api.dart)):
 
 > O projeto gratuito do Supabase é pausado após 1 semana sem uso. Para reativar: painel do Supabase > "Restore project".
 
+### Esqueci a senha (e-mail com código)
+
+O app envia um código de 6 dígitos por e-mail. Para isso funcionar, configure no painel do Supabase:
+
+1. **Authentication > Emails > Templates > Reset password**: cole o conteúdo de [supabase/email-templates/reset-password.html](supabase/email-templates/reset-password.html). É o `{{ .Token }}` que coloca o código no e-mail.
+2. **Authentication > Sign In / Providers > Email**: *Email OTP Length* = `6`.
+3. **Authentication > Emails > SMTP Settings**: configure um SMTP próprio. O serviço de e-mail padrão do Supabase só envia para membros da equipe do projeto e tem limite de poucos e-mails por hora.
+
 ### 1. Backend no Render (só na primeira vez)
 
 1. Entre em https://render.com com a conta do GitHub dona do repositório.
