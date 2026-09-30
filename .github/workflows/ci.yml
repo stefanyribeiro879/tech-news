@@ -24,4 +24,27 @@ jobs:
         run: flutter analyze --no-fatal-infos
 
       - name: Rodar os testes
-        run: flutter test --reporter github
+        run: |
+          flutter test --machine > test-results.jsonl || true
+          # Cada teste que falhou vira uma anotação (nome + erro) no GitHub.
+          python3 - <<'EOF'
+          import json, sys
+          names, errors, failed = {}, {}, []
+          for line in open('test-results.jsonl', encoding='utf-8'):
+              try:
+                  e = json.loads(line)
+              except ValueError:
+                  continue
+              if e.get('type') == 'testStart':
+                  names[e['test']['id']] = e['test']['name']
+              elif e.get('type') == 'error':
+                  errors.setdefault(e['testID'], []).append(e['error'])
+              elif e.get('type') == 'testDone' and e.get('result') != 'success' and not e.get('hidden'):
+                  failed.append(e['testID'])
+          for test_id in failed:
+              message = '\n'.join(errors.get(test_id, []))[:1500]
+              message = message.replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+              print(f"::error title={names.get(test_id, test_id)}::{message}")
+          print(f"{len(failed)} teste(s) falharam.")
+          sys.exit(1 if failed else 0)
+          EOF
