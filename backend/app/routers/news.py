@@ -46,7 +46,7 @@ async def featured_news(
 @router.get("/news/search", response_model=NewsPage)
 async def search_news(
     request: Request,
-    q: Annotated[str, Query(min_length=2, description="Texto a buscar")],
+    q: Annotated[str, Query(min_length=2, max_length=100, description="Texto a buscar")],
     page: Annotated[int, Query(ge=1)] = 1,
     limit: Annotated[int, Query(ge=1, le=50)] = 20,
 ) -> NewsPage:

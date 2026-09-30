@@ -1,10 +1,21 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Permite abrir o instalador ao atualizar o app por dentro dele. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+
+    <!-- Permissões que o plugin ota_update declara mas o app não usa (o APK é
+         salvo na pasta interna do app). Removidas para o app pedir só o
+         necessário. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.INSTALL_PACKAGES" tools:node="remove"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" tools:node="remove"/>
     <application
         android:label="Tech News"
         android:name="${applicationName}"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:usesCleartextTraffic="false"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

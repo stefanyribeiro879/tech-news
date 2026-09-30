@@ -85,6 +85,17 @@ class SupabaseService {
 
   static Future<void> signOut() => _db.auth.signOut();
 
+  // Apaga a conta de quem está logado (função delete_my_account em
+  // supabase/security.sql). Perfil e salvos são apagados junto.
+  static Future<void> deleteAccount() async {
+    await _db.rpc('delete_my_account');
+    try {
+      await _db.auth.signOut();
+    } catch (_) {
+      // A sessão já não vale mais no servidor; a local é descartada mesmo assim.
+    }
+  }
+
   // ------------------------------------------------------
   // ESQUECI A SENHA
   // 1. Envia um e-mail com código de 6 dígitos ({{ .Token }} no modelo
@@ -187,8 +198,8 @@ String authErrorMessage(Object error) {
     if (error.code == 'same_password' || message.contains('different from')) {
       return 'A nova senha precisa ser diferente da atual.';
     }
-    if (message.contains('password')) {
-      return 'A senha precisa ter pelo menos 6 caracteres.';
+    if (error.code == 'weak_password' || message.contains('password')) {
+      return 'Senha fraca: use pelo menos 8 caracteres, com letras e números.';
     }
     if (message.contains('rate limit')) {
       return 'Muitas tentativas. Aguarde alguns minutos.';

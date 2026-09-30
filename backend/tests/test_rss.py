@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
-from app.sources.rss import article_id, html_to_text, parse_feed, truncate
+from app.sources.rss import article_id, html_to_text, is_web_url, parse_feed, truncate
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sample_feed.xml"
 
@@ -47,3 +47,23 @@ def test_truncate_corta_na_palavra():
     assert len(result) <= 31
     assert result.endswith("…")
     assert not result.startswith(" ")
+
+
+def test_so_aceita_links_web():
+    assert is_web_url("https://exemplo.com/noticia")
+    assert is_web_url("http://exemplo.com")
+    assert not is_web_url("javascript:alert(1)")
+    assert not is_web_url("data:text/html,oi")
+    assert not is_web_url("https://")
+    assert not is_web_url(None)
+
+
+def test_descarta_noticia_com_link_perigoso():
+    feed = """<?xml version="1.0"?><rss version="2.0"><channel><title>T</title>
+    <item><title>Golpe</title><link>javascript:alert(1)</link></item>
+    <item><title>Ok</title><link>https://exemplo.com/ok</link>
+      <description>&lt;img src="javascript:x"&gt;</description></item>
+    </channel></rss>"""
+    articles = parse_feed(feed, "Teste")
+    assert [a.url for a in articles] == ["https://exemplo.com/ok"]
+    assert articles[0].image_url is None

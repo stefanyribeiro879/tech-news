@@ -35,6 +35,12 @@ _IMG_RE = re.compile(r"<img[^>]+src=[\"']([^\"']+)[\"']", re.IGNORECASE)
 _BLOCK_END_RE = re.compile(r"</(p|div|h\d|li)>|<br\s*/?>", re.IGNORECASE)
 _SPACES_RE = re.compile(r"[ \t\r\f\v]+")
 _BLANK_LINES_RE = re.compile(r"\n\s*\n+")
+_WEB_URL_RE = re.compile(r"^https?://[^\s/]+", re.IGNORECASE)
+
+
+def is_web_url(url: str | None) -> bool:
+    """Só links http(s): bloqueia "javascript:", "data:" etc. vindos do feed."""
+    return bool(url) and len(url) <= 2048 and _WEB_URL_RE.match(url) is not None
 
 
 def article_id(url: str) -> str:
@@ -69,6 +75,11 @@ def _find_image(entry: feedparser.FeedParserDict, raw_html: str) -> str | None:
     return html.unescape(match.group(1)) if match else None
 
 
+def _safe_image(entry: feedparser.FeedParserDict, raw_html: str) -> str | None:
+    image = _find_image(entry, raw_html)
+    return image if is_web_url(image) else None
+
+
 def _published(entry: feedparser.FeedParserDict) -> datetime:
     parsed = entry.get("published_parsed") or entry.get("updated_parsed")
     if parsed:
@@ -84,7 +95,7 @@ def parse_feed(raw: bytes | str, source: str) -> list[Article]:
     for entry in parsed.entries:
         url = entry.get("link")
         title = html.unescape(entry.get("title", "")).strip()
-        if not url or not title:
+        if not is_web_url(url) or not title:
             continue
 
         summary_html = entry.get("summary", "")
@@ -101,7 +112,7 @@ def parse_feed(raw: bytes | str, source: str) -> list[Article]:
                 summary=summary,
                 content=content,
                 url=url,
-                image_url=_find_image(entry, content_html + summary_html),
+                image_url=_safe_image(entry, content_html + summary_html),
                 source=source,
                 category=categorize(title, summary, tags),
                 published_at=_published(entry),

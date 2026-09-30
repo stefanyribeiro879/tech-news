@@ -20,6 +20,10 @@ import 'package:url_launcher/url_launcher.dart';
 const String _latestReleaseUrl =
     'https://api.github.com/repos/stefanyribeiro879/tech-news/releases/latest';
 
+// Segurança: o APK só é baixado deste endereço (Releases do repositório).
+const String _trustedDownloadPrefix =
+    'https://github.com/stefanyribeiro879/tech-news/releases/download/';
+
 // Código nativo em MainActivity.kt (permissão "Instalar apps desconhecidos").
 const _installer = MethodChannel('technews/installer');
 
@@ -57,13 +61,16 @@ Future<AppRelease?> fetchNewerRelease() async {
       .firstOrNull;
   if (apk == null) return null;
 
+  final apkUrl = apk['browser_download_url'] as String;
+  if (!apkUrl.startsWith(_trustedDownloadPrefix)) return null;
+
   // O GitHub informa o hash do arquivo ("sha256:..."); usamos para
   // conferir que o download chegou inteiro.
   final digest = apk['digest'] as String?;
 
   return AppRelease(
     version: version,
-    apkUrl: apk['browser_download_url'] as String,
+    apkUrl: apkUrl,
     sha256: digest != null && digest.startsWith('sha256:')
         ? digest.substring('sha256:'.length)
         : null,

@@ -4,3 +4,12 @@ compatibility_date = "2026-09-01"
 
 [vars]
 SUPABASE_URL = "https://fuwdcbznpyvydkmdaczv.supabase.co"
+
+# Limite de tentativas no login/cadastro/códigos: 20 por minuto por IP.
+[[ratelimits]]
+name = "AUTH_LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 20
+  period = 60

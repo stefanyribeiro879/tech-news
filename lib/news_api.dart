@@ -34,6 +34,18 @@ String get apiBaseUrl {
 }
 
 // ======================================================
+// LINKS SEGUROS
+// Links e imagens vêm de feeds de terceiros: só aceitamos http(s).
+// Bloqueia "javascript:", "data:", "file:" etc.
+// ======================================================
+
+Uri? safeWebUri(String? value) {
+  final uri = Uri.tryParse(value?.trim() ?? '');
+  if (uri == null || uri.host.isEmpty) return null;
+  return (uri.scheme == 'https' || uri.scheme == 'http') ? uri : null;
+}
+
+// ======================================================
 // MODELO DA NOTÍCIA
 // ======================================================
 
@@ -69,7 +81,8 @@ class NewsArticle {
       content: json['content'] as String,
       source: json['source'] as String,
       url: json['url'] as String,
-      imageUrl: json['image_url'] as String?,
+      // Imagem com endereço estranho é ignorada (mostra o ícone do tema).
+      imageUrl: safeWebUri(json['image_url'] as String?)?.toString(),
       publishedAt: DateTime.parse(json['published_at'] as String).toLocal(),
     );
   }

@@ -19,7 +19,13 @@ class ArticlePage extends StatelessWidget {
   // não suportar, cai para o navegador externo.
   Future<void> openOriginal(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
-    final url = Uri.parse(article.url);
+    final url = safeWebUri(article.url);
+    if (url == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Link da matéria inválido.')),
+      );
+      return;
+    }
 
     var opened = false;
     try {

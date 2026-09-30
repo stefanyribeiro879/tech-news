@@ -23,9 +23,33 @@ export default {
       return new Response('Not found', { status: 404 });
     }
 
-    const target = new URL(url.pathname + url.search, env.SUPABASE_URL);
+    // Todo mundo chega ao Supabase com o IP do Cloudflare, então o limite de
+    // tentativas por IP do Supabase deixa de separar os usuários. Aqui o
+    // limite é por IP real: protege login, cadastro e códigos contra
+    // tentativas em massa (força bruta).
+    const clientIp = request.headers.get('CF-Connecting-IP') ?? 'desconhecido';
+    if (url.pathname.startsWith('/auth/v1/') && request.method !== 'GET' && env.AUTH_LIMITER) {
+      const { success } = await env.AUTH_LIMITER.limit({ key: clientIp });
+      if (!success) {
+        return new Response(
+          JSON.stringify({
+            code: 'over_request_rate_limit',
+            message: 'Too many requests: rate limit exceeded',
+          }),
+          { status: 429, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+    }
+
+    // Monta o destino sempre no host do Supabase (nunca em outro domínio).
+    const target = new URL(env.SUPABASE_URL);
+    target.pathname = url.pathname;
+    target.search = url.search;
+
+    const forwarded = new Request(target, request);
+    forwarded.headers.set('X-Forwarded-For', clientIp);
 
     // Copia método, cabeçalhos e corpo. Funciona também para WebSocket (realtime).
-    return fetch(new Request(target, request));
+    return fetch(forwarded);
   },
 };

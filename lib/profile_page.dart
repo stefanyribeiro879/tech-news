@@ -50,6 +50,52 @@ class ProfilePage extends StatelessWidget {
     if (confirmed == true) onLogout();
   }
 
+  // Exclusão definitiva: conta, perfil, temas e salvos (LGPD).
+  Future<void> confirmDeleteAccount(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: Icon(Icons.warning_amber_rounded, color: context.colors.error),
+        title: const Text('Excluir sua conta?'),
+        content: const Text(
+          'Sua conta, seus temas e suas notícias salvas serão apagados para '
+          'sempre. Não dá para desfazer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: context.colors.error,
+            ),
+            child: const Text(
+              'Excluir conta',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await SupabaseService.deleteAccount();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Sua conta foi excluída.')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível excluir a conta. Tente de novo.'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -205,6 +251,19 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
                 ],
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                ListTile(
+                  onTap: () => confirmDeleteAccount(context),
+                  leading: Icon(
+                    Icons.delete_forever_outlined,
+                    color: colors.onSurfaceVariant,
+                  ),
+                  title: const Text(
+                    'Excluir minha conta',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  subtitle: const Text('Apaga seus dados de forma definitiva'),
+                ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 ListTile(
                   onTap: () => confirmLogout(context),

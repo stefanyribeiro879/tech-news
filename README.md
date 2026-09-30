@@ -114,6 +114,23 @@ O deploy mostra o endereço, por exemplo `https://technews-supabase.SEU-USUARIO.
 
 > Os links de confirmação de e-mail enviados pelo Supabase continuam apontando para `supabase.co`.
 
+## Segurança
+
+**No código:**
+- **Banco:** cada usuário só acessa os próprios dados (RLS em [supabase/schema.sql](supabase/schema.sql)). O arquivo [supabase/security.sql](supabase/security.sql) acrescenta limites de tamanho, até 500 salvos por pessoa, só links http(s) e a função de excluir a própria conta.
+- **Links de feeds:** backend e app descartam links que não sejam http(s), como `javascript:` e `data:`.
+- **Senhas novas:** no mínimo 8 caracteres, com letras e números.
+- **Android:**
+  - sem backup da sessão na nuvem;
+  - só HTTPS na versão publicada;
+  - sem permissões desnecessárias;
+  - código ofuscado;
+  - o atualizador só baixa APK das Releases deste repositório e confere o SHA-256. O Android ainda confere a assinatura.
+- **Proxy:** até 20 tentativas por minuto por IP no login, cadastro e códigos. Só repassa as rotas do Supabase.
+- **Dependabot:** avisa sobre dependências com correção de segurança.
+
+**Configurações manuais (painéis):** ver a lista na seção de segurança da conversa de manutenção ou no histórico do projeto.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.

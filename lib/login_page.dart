@@ -284,6 +284,8 @@ class _SignUpFormState extends State<SignUpForm> {
           children: [
             TextFormField(
               controller: nameController,
+              // Mesmo limite do banco (supabase/security.sql), sem contador.
+              inputFormatters: [LengthLimitingTextInputFormatter(80)],
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.next,
               decoration: const InputDecoration(
@@ -303,6 +305,7 @@ class _SignUpFormState extends State<SignUpForm> {
 
             PasswordField(
               controller: passwordController,
+              creating: true,
               visible: showPassword,
               onToggleVisible: () {
                 setState(() {
@@ -603,6 +606,7 @@ class _NewPasswordFormState extends State<NewPasswordForm> {
           children: [
             PasswordField(
               controller: passwordController,
+              creating: true,
               visible: showPassword,
               onToggleVisible: () {
                 setState(() {
@@ -761,11 +765,25 @@ class EmailField extends StatelessWidget {
   }
 }
 
+const passwordRule = 'Mínimo de 8 caracteres, com letras e números';
+
+// null = senha forte o bastante.
+String? weakPasswordReason(String password) {
+  if (password.length < 8) return 'Use pelo menos 8 caracteres';
+  if (!password.contains(RegExp(r'[A-Za-z]'))) return 'Inclua pelo menos uma letra';
+  if (!password.contains(RegExp(r'[0-9]'))) return 'Inclua pelo menos um número';
+  return null;
+}
+
 class PasswordField extends StatelessWidget {
   final TextEditingController controller;
   final bool visible;
   final VoidCallback onToggleVisible;
   final VoidCallback? onSubmitted;
+
+  // Criando uma senha (cadastro, nova senha): exige senha forte.
+  // No login, só confere se foi preenchida (senhas antigas continuam valendo).
+  final bool creating;
 
   const PasswordField({
     super.key,
@@ -773,6 +791,7 @@ class PasswordField extends StatelessWidget {
     required this.visible,
     required this.onToggleVisible,
     this.onSubmitted,
+    this.creating = false,
   });
 
   @override
@@ -783,7 +802,7 @@ class PasswordField extends StatelessWidget {
       onFieldSubmitted: (_) => onSubmitted?.call(),
       decoration: InputDecoration(
         labelText: 'Senha',
-        helperText: 'Mínimo de 6 caracteres',
+        helperText: creating ? passwordRule : null,
         prefixIcon: const Icon(Icons.lock_outline_rounded),
         suffixIcon: IconButton(
           tooltip: visible ? 'Esconder senha' : 'Mostrar senha',
@@ -793,9 +812,11 @@ class PasswordField extends StatelessWidget {
           ),
         ),
       ),
-      validator: (value) => (value == null || value.length < 6)
-          ? 'A senha precisa ter pelo menos 6 caracteres'
-          : null,
+      validator: (value) {
+        final password = value ?? '';
+        if (password.isEmpty) return 'Informe a senha';
+        return creating ? weakPasswordReason(password) : null;
+      },
     );
   }
 }
