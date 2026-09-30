@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'logo.dart';
 import 'motion.dart';
 import 'news_api.dart';
 import 'supabase_service.dart';
@@ -287,11 +288,11 @@ class _Greeting extends StatelessWidget {
     required this.onProfile,
   });
 
-  (String, String) get _partOfDay {
+  String get _partOfDay {
     final hour = DateTime.now().hour;
-    if (hour < 12) return ('Bom dia', '☀️');
-    if (hour < 18) return ('Boa tarde', '🌤️');
-    return ('Boa noite', '🌙');
+    if (hour < 12) return 'Bom dia';
+    if (hour < 18) return 'Boa tarde';
+    return 'Boa noite';
   }
 
   String get _topicsSummary {
@@ -305,34 +306,17 @@ class _Greeting extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final (greeting, emoji) = _partOfDay;
-
+    // Topo: logo à esquerda, busca e perfil à direita.
+    // Abaixo: a saudação numa linha só ("Boa tarde, Levi").
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '$greeting,',
-                    style: TextStyle(
-                      color: colors.onSurfaceVariant,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    '${profile.firstName} $emoji',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      height: 1.15,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
+            const Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: TechNewsLogo(height: 36),
               ),
             ),
             IconButton.filledTonal(
@@ -357,6 +341,28 @@ class _Greeting extends StatelessWidget {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 20),
+        Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: '$_partOfDay, ',
+                style: TextStyle(
+                  color: colors.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              TextSpan(text: profile.firstName),
+            ],
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 26,
+            height: 1.15,
+            fontWeight: FontWeight.w900,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
