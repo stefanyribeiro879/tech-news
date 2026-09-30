@@ -12,3 +12,8 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Chave de assinatura do Android (nunca commitar)
+key.properties
+*.jks
+*.keystore

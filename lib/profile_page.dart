@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_settings.dart';
+import 'app_update.dart';
 import 'supabase_service.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -174,10 +175,25 @@ class ProfilePage extends StatelessWidget {
                     'Sobre o Tech News',
                     style: TextStyle(fontWeight: FontWeight.w800),
                   ),
-                  subtitle: const Text(
-                    'Projeto A3 · Redes de Computadores · v1.0.0',
+                  subtitle: FutureBuilder<String>(
+                    future: installedVersion(),
+                    builder: (context, snapshot) => Text(
+                      'Projeto A3 · Redes de Computadores · '
+                      'v${snapshot.data ?? '...'}',
+                    ),
                   ),
                 ),
+                if (appUpdateSupported) ...[
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  ListTile(
+                    onTap: () => checkForAppUpdate(context, manual: true),
+                    leading: const Icon(Icons.system_update_rounded),
+                    title: const Text(
+                      'Procurar atualização',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ],
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 ListTile(
                   onTap: () => confirmLogout(context),

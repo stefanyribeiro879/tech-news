@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_settings.dart';
+import 'app_update.dart';
 import 'explore_page.dart';
 import 'favorite_topics_page.dart';
 import 'home_page.dart';
@@ -72,6 +73,10 @@ class _AuthGateState extends State<AuthGate> {
     super.initState();
     // Dispara logo ao assinar, com a sessão salva (se houver).
     authSubscription = SupabaseService.authChanges.listen(onAuthChange);
+    // Procura versão nova do app (só no Android) depois da primeira tela.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => checkForAppUpdate(context),
+    );
   }
 
   @override

@@ -61,13 +61,55 @@ flutter build web --release --base-href /tech-news/ --output docs
 
 Faça commit da pasta `docs/` e push na `main`. O site fica em https://stefanyribeiro879.github.io/tech-news/.
 
-### 3. App Android (APK)
+### 3. App Android (APK) e atualização automática
 
-```bash
-flutter build apk --release
+O APK é gerado e publicado pelo GitHub Actions ([.github/workflows/release-android.yml](.github/workflows/release-android.yml)). Ao abrir, o app consulta a última Release do GitHub. Se houver versão nova, mostra "Nova versão", baixa o APK e abre o instalador do Android. O usuário só toca em **Atualizar** e depois em **Instalar**. Também dá para procurar manualmente em **Perfil > Procurar atualização**.
+
+**Para lançar uma versão nova:**
+
+1. Aumente `version:` no [pubspec.yaml](pubspec.yaml), por exemplo de `1.0.1+2` para `1.0.2+3`. Aumente sempre os dois números.
+2. Faça commit e push.
+3. Crie a tag com o texto de novidades, que é o que aparece para o usuário:
+   ```bash
+   git tag -a v1.0.2 -m "Corrige o cadastro em algumas redes"
+   git push origin v1.0.2
+   ```
+4. Acompanhe na aba **Actions** do GitHub. Em ~5 min a Release aparece com o `tech-news.apk`.
+
+**Configuração (só na primeira vez).** A chave de assinatura precisa ser sempre a mesma. Se ela mudar, o Android recusa instalar a atualização.
+
+1. Gere a chave, com o `keytool` que vem com o Android Studio (`<Android Studio>/jbr/bin/keytool`):
+   ```bash
+   keytool -genkey -v -keystore technews-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias technews
+   ```
+   Guarde o arquivo e a senha em lugar seguro, fora do git. Se perder a chave, todos terão que reinstalar o app.
+2. No GitHub, em **Settings > Secrets and variables > Actions > Secrets**, crie:
+   - `ANDROID_KEYSTORE_BASE64`: o conteúdo do arquivo em base64 (`base64 -w0 technews-release.jks`)
+   - `ANDROID_KEYSTORE_PASSWORD`: a senha
+   - `ANDROID_KEY_ALIAS`: `technews`
+3. (Opcional) Na aba **Variables** da mesma tela, crie `SUPABASE_URL` só se quiser trocar o endereço do proxy sem mexer no código. O padrão está em [lib/supabase_service.dart](lib/supabase_service.dart).
+
+Para gerar um APK assinado no seu computador, crie `android/key.properties`, que está fora do git:
+```
+storeFile=../caminho/technews-release.jks
+storePassword=SUA_SENHA
+keyAlias=technews
+keyPassword=SUA_SENHA
 ```
 
-O arquivo fica em `build/app/outputs/flutter-apk/app-release.apk`. Ele não vai para o git; mande pelo WhatsApp/Drive ou anexe numa Release do GitHub. No celular, abra o arquivo e permita "instalar apps de fontes desconhecidas". O APK usa o backend do Render, então funciona em qualquer rede (Wi-Fi ou 4G).
+### 4. Proxy do Supabase (Cloudflare Workers, gratuito)
+
+Algumas redes, DNS privados e bloqueadores barram `*.supabase.co`, e o cadastro falha com "Connection refused". O Worker em [cloudflare/supabase-proxy](cloudflare/supabase-proxy) recebe as chamadas do app num endereço `*.workers.dev` e repassa ao Supabase. O plano grátis cobre 100 mil requisições por dia.
+
+```bash
+cd cloudflare/supabase-proxy
+npx wrangler login
+npx wrangler deploy
+```
+
+O deploy mostra o endereço, por exemplo `https://technews-supabase.SEU-USUARIO.workers.dev`. Teste `.../health` no navegador; deve aparecer `ok`. O endereço atual (`https://technews-supabase.technews-a3.workers.dev`) já é o padrão do app em [lib/supabase_service.dart](lib/supabase_service.dart). Para testar localmente: `flutter run --dart-define=SUPABASE_URL=https://...workers.dev`.
+
+> Os links de confirmação de e-mail enviados pelo Supabase continuam apontando para `supabase.co`.
 
 ## Getting Started
 

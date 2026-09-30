@@ -8,7 +8,14 @@ import 'news_api.dart';
 // definidas em supabase/schema.sql. Nunca coloque a secret key aqui.
 // ======================================================
 
-const String supabaseUrl = 'https://fuwdcbznpyvydkmdaczv.supabase.co';
+// Algumas redes bloqueiam *.supabase.co, então o app fala com o proxy
+// (cloudflare/supabase-proxy), que repassa tudo ao Supabase
+// (https://fuwdcbznpyvydkmdaczv.supabase.co). Para usar outro endereço:
+// flutter run --dart-define=SUPABASE_URL=https://...
+const String supabaseUrl = String.fromEnvironment(
+  'SUPABASE_URL',
+  defaultValue: 'https://technews-supabase.technews-a3.workers.dev',
+);
 const String supabasePublishableKey =
     'sb_publishable_DKP1Rn_1xKD0yRSxJbvk0g_RnhnbG2I';
 
@@ -156,5 +163,7 @@ String authErrorMessage(Object error) {
     }
     return error.message;
   }
-  return 'Não foi possível conectar. Verifique sua internet.';
+  return 'Não foi possível conectar ao servidor. Verifique sua internet '
+      'ou tente outra rede (Wi-Fi/dados). Se usar VPN, bloqueador de '
+      'anúncios ou DNS privado, desative e tente de novo.';
 }
