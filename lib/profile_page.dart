@@ -176,7 +176,7 @@ class ProfilePage extends StatelessWidget {
                   subtitle: FutureBuilder<String>(
                     future: installedVersion(),
                     builder: (context, snapshot) => Text(
-                      'Projeto A3 · Redes de Computadores · '
+                      'Projeto A3 - Tech News · '
                       'v${snapshot.data ?? '...'}',
                     ),
                   ),
