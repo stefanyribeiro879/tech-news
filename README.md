@@ -129,7 +129,18 @@ O deploy mostra o endereço, por exemplo `https://technews-supabase.SEU-USUARIO.
 - **Proxy:** até 20 tentativas por minuto por IP no login, cadastro e códigos. Só repassa as rotas do Supabase.
 - **Dependabot:** avisa sobre dependências com correção de segurança.
 
-**Configurações manuais (painéis):** ver a lista na seção de segurança da conversa de manutenção ou no histórico do projeto.
+**Configurações feitas nos painéis (não ficam no código):**
+- **Supabase:**
+  - rodar [supabase/security.sql](supabase/security.sql);
+  - *Authentication > Sign In / Providers > Email*: senha mínima 8 com letras e números, OTP de 6 dígitos, expiração do OTP em 900 s;
+  - *URL Configuration*: Site URL do GitHub Pages;
+  - *Advisors > Security Advisor* sem alertas.
+- **Cloudflare:** `npx wrangler deploy` em `cloudflare/supabase-proxy`, sempre que o proxy mudar.
+- **GitHub:**
+  - verificação em duas etapas nas contas com acesso;
+  - *Settings > Branches*: proteger a `main`, exigindo que a Verificação passe;
+  - *Settings > Code security*: Secret scanning, Push protection e Dependabot alerts ligados;
+  - *Settings > Pages > Source*: GitHub Actions.
 
 ## Getting Started
 
