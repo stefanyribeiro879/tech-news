@@ -120,6 +120,8 @@ O deploy mostra o endereço, por exemplo `https://technews-supabase.SEU-USUARIO.
 - **Banco:** cada usuário só acessa os próprios dados (RLS em [supabase/schema.sql](supabase/schema.sql)). O arquivo [supabase/security.sql](supabase/security.sql) acrescenta limites de tamanho, até 500 salvos por pessoa, só links http(s) e a função de excluir a própria conta.
 - **Links de feeds:** backend e app descartam links que não sejam http(s), como `javascript:` e `data:`.
 - **Senhas novas:** no mínimo 8 caracteres, com letras e números.
+- **E-mail no cadastro:** formato conferido, e-mails temporários barrados e consulta ao DNS para saber se o domínio recebe e-mails ([lib/email_check.dart](lib/email_check.dart)). O banco repete a conferência de formato ([supabase/email-validation.sql](supabase/email-validation.sql)). Só vale para contas novas: login e contas existentes não mudam.
+- **Notícias limpas:** o backend tira anúncios, ofertas, avisos de afiliados e chamadas para outras matérias do texto ([backend/app/sources/cleaner.py](backend/app/sources/cleaner.py)).
 - **Android:**
   - sem backup da sessão na nuvem;
   - só HTTPS na versão publicada;
@@ -132,6 +134,8 @@ O deploy mostra o endereço, por exemplo `https://technews-supabase.SEU-USUARIO.
 **Configurações feitas nos painéis (não ficam no código):**
 - **Supabase:**
   - rodar [supabase/security.sql](supabase/security.sql);
+  - rodar [supabase/email-validation.sql](supabase/email-validation.sql) (validação de e-mail das contas novas);
+  - *Authentication > Sign In / Providers > Email*: "Confirm email" ligado, para só entrar quem abrir o link enviado ao e-mail;
   - *Authentication > Sign In / Providers > Email*: senha mínima 8 com letras e números, OTP de 6 dígitos, expiração do OTP em 900 s;
   - *URL Configuration*: Site URL do GitHub Pages;
   - *Advisors > Security Advisor* sem alertas.

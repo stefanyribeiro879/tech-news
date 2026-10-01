@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_settings.dart';
+import 'email_check.dart';
 import 'install_hint.dart';
 import 'logo.dart';
 import 'motion.dart';
@@ -245,6 +246,17 @@ class _SignUpFormState extends State<SignUpForm> {
 
     final email = emailController.text.trim();
 
+    // Confere se o domínio do e-mail existe e recebe mensagens.
+    final domainError = await emailDomainError(email);
+    if (!mounted) return;
+    if (domainError != null) {
+      setState(() {
+        loading = false;
+        error = domainError;
+      });
+      return;
+    }
+
     try {
       appSettings.setRememberLogin(remember);
       final loggedIn = await SupabaseService.signUp(
@@ -299,7 +311,7 @@ class _SignUpFormState extends State<SignUpForm> {
 
             const SizedBox(height: 14),
 
-            EmailField(controller: emailController),
+            EmailField(controller: emailController, creating: true),
 
             const SizedBox(height: 14),
 
@@ -742,7 +754,16 @@ class AuthLayout extends StatelessWidget {
 class EmailField extends StatelessWidget {
   final TextEditingController controller;
 
-  const EmailField({super.key, required this.controller});
+  // Criando a conta: formato rígido, sem e-mail temporário (email_check.dart).
+  // No login e no "esqueci a senha", conferência simples: contas antigas
+  // continuam entrando normalmente.
+  final bool creating;
+
+  const EmailField({
+    super.key,
+    required this.controller,
+    this.creating = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -756,6 +777,7 @@ class EmailField extends StatelessWidget {
         prefixIcon: Icon(Icons.mail_outline_rounded),
       ),
       validator: (value) {
+        if (creating) return emailFormatError(value ?? '');
         final email = value?.trim() ?? '';
         return (email.contains('@') && email.contains('.'))
             ? null

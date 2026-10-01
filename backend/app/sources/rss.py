@@ -12,6 +12,7 @@ import httpx
 
 from app.schemas import Article
 from app.services.categorizer import categorize
+from app.sources.cleaner import clean_article_html, html_to_text  # noqa: F401 (html_to_text reexportado)
 
 
 @dataclass(frozen=True)
@@ -30,11 +31,7 @@ FEEDS: list[Feed] = [
 
 SUMMARY_MAX_CHARS = 280
 
-_TAG_RE = re.compile(r"<[^>]+>")
 _IMG_RE = re.compile(r"<img[^>]+src=[\"']([^\"']+)[\"']", re.IGNORECASE)
-_BLOCK_END_RE = re.compile(r"</(p|div|h\d|li)>|<br\s*/?>", re.IGNORECASE)
-_SPACES_RE = re.compile(r"[ \t\r\f\v]+")
-_BLANK_LINES_RE = re.compile(r"\n\s*\n+")
 _WEB_URL_RE = re.compile(r"^https?://[^\s/]+", re.IGNORECASE)
 
 
@@ -46,15 +43,6 @@ def is_web_url(url: str | None) -> bool:
 def article_id(url: str) -> str:
     """ID estável: o mesmo link sempre gera o mesmo id."""
     return hashlib.sha1(url.encode("utf-8")).hexdigest()[:16]
-
-
-def html_to_text(raw: str) -> str:
-    """Remove as tags HTML, mantendo a quebra entre parágrafos."""
-    text = _BLOCK_END_RE.sub("\n\n", raw)
-    text = html.unescape(_TAG_RE.sub("", text))
-    text = _SPACES_RE.sub(" ", text)
-    text = _BLANK_LINES_RE.sub("\n\n", text)
-    return "\n".join(line.strip() for line in text.strip().splitlines())
 
 
 def truncate(text: str, limit: int = SUMMARY_MAX_CHARS) -> str:
@@ -101,8 +89,10 @@ def parse_feed(raw: bytes | str, source: str) -> list[Article]:
         summary_html = entry.get("summary", "")
         content_html = entry["content"][0].get("value", "") if entry.get("content") else ""
 
-        summary = truncate(html_to_text(summary_html))
-        content = html_to_text(content_html) or html_to_text(summary_html)
+        # Sem anúncios, ofertas e chamadas para outras matérias (cleaner.py).
+        clean_summary = clean_article_html(summary_html)
+        content = clean_article_html(content_html) or clean_summary
+        summary = truncate(clean_summary or content)
         tags = [t.get("term", "") for t in entry.get("tags", [])]
 
         articles.append(

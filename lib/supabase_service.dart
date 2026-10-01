@@ -191,6 +191,14 @@ String authErrorMessage(Object error) {
     if (message.contains('already registered')) {
       return 'Já existe uma conta com esse e-mail.';
     }
+    // Recusado pelo Supabase ou pela regra do banco
+    // (supabase/email-validation.sql).
+    if (error.code == 'email_address_invalid' ||
+        message.contains('validate email') ||
+        message.contains('database error saving new user')) {
+      return 'Não foi possível criar a conta com esse e-mail. Use um e-mail '
+          'real (e-mails temporários não são aceitos).';
+    }
     if (error.code == 'otp_expired' ||
         message.contains('token has expired or is invalid')) {
       return 'Código inválido ou expirado. Confira o e-mail ou peça outro.';

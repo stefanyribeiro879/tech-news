@@ -13,6 +13,10 @@ class AppSettings extends ChangeNotifier {
   static const _oldThemeKey = 'theme_mode'; // versões até 1.0.2
   static const _rememberKey = 'remember_login';
   static const _hasAccountKey = 'has_account_on_device';
+  static const _readingScaleKey = 'reading_scale';
+
+  // Tamanhos do texto na leitura da notícia (botão "Aa").
+  static const readingScales = [0.9, 1.0, 1.15, 1.3];
 
   SharedPreferences? _prefs;
 
@@ -23,6 +27,9 @@ class AppSettings extends ChangeNotifier {
 
   // Primeira vez no aparelho abre o cadastro; depois, o login.
   bool hasAccountOnDevice = false;
+
+  // Tamanho do texto da notícia (1.0 = padrão).
+  double readingScale = 1.0;
 
   Future<void> load() async {
     try {
@@ -40,6 +47,8 @@ class AppSettings extends ChangeNotifier {
         : AppLook.light;
     rememberLogin = _prefs!.getBool(_rememberKey) ?? true;
     hasAccountOnDevice = _prefs!.getBool(_hasAccountKey) ?? false;
+    final scale = _prefs!.getDouble(_readingScaleKey);
+    readingScale = readingScales.contains(scale) ? scale! : 1.0;
   }
 
   void setLook(AppLook value) {
@@ -51,6 +60,14 @@ class AppSettings extends ChangeNotifier {
   void setRememberLogin(bool value) {
     rememberLogin = value;
     _prefs?.setBool(_rememberKey, value);
+    notifyListeners();
+  }
+
+  // Passa para o próximo tamanho (volta ao menor depois do maior).
+  void nextReadingScale() {
+    final index = readingScales.indexOf(readingScale);
+    readingScale = readingScales[(index + 1) % readingScales.length];
+    _prefs?.setDouble(_readingScaleKey, readingScale);
     notifyListeners();
   }
 
