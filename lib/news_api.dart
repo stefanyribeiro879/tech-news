@@ -132,6 +132,23 @@ class NewsArticle {
 // CHAMADAS À API
 // ======================================================
 
+// Uma página de notícias, com o total para saber se ainda há mais.
+class NewsPageResult {
+  final List<NewsArticle> items;
+  final int total;
+  final int page;
+  final int limit;
+
+  const NewsPageResult({
+    required this.items,
+    required this.total,
+    required this.page,
+    required this.limit,
+  });
+
+  bool get hasMore => page * limit < total;
+}
+
 class NewsApiException implements Exception {
   final String message;
 
@@ -157,6 +174,25 @@ class NewsApi {
       'limit': '$limit',
     });
     return _articles(data['items']);
+  }
+
+  // Uma página do feed (rolagem contínua). O backend limita `limit` a 50.
+  static Future<NewsPageResult> page({
+    String? category,
+    int page = 1,
+    int limit = 15,
+  }) async {
+    final data = await _get('/news', {
+      'category': ?category,
+      'page': '$page',
+      'limit': '$limit',
+    });
+    return NewsPageResult(
+      items: _articles(data['items']),
+      total: (data['total'] as num?)?.toInt() ?? 0,
+      page: (data['page'] as num?)?.toInt() ?? page,
+      limit: (data['limit'] as num?)?.toInt() ?? limit,
+    );
   }
 
   static Future<List<NewsArticle>> search(String query) async {

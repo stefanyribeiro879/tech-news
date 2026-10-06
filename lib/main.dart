@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_settings.dart';
 import 'app_update.dart';
 import 'explore_page.dart';
+import 'feed_page.dart';
 import 'favorite_topics_page.dart';
 import 'home_page.dart';
 import 'login_page.dart';
@@ -14,14 +15,15 @@ import 'motion.dart';
 import 'profile_page.dart';
 import 'saved_articles.dart';
 import 'saved_page.dart';
+import 'splash_screen.dart';
 import 'supabase_service.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await appSettings.load();
-  await initSupabase();
+  // Independentes entre si: rodam juntas para a abertura ficar mais rápida.
+  await Future.wait([appSettings.load(), initSupabase()]);
   // Sem "manter conectado", cada abertura do app começa pelo login.
   await SupabaseService.signOutIfNotRemembered(appSettings.rememberLogin);
   runApp(const TechNewsApp());
@@ -44,7 +46,7 @@ class TechNewsApp extends StatelessWidget {
         // Trocar a aparência anima as cores do app inteiro.
         theme: buildTheme(appSettings.look),
         themeAnimationDuration: const Duration(milliseconds: 450),
-        home: const AuthGate(),
+        home: const SplashGate(child: AuthGate()),
       ),
     );
   }
@@ -239,9 +241,14 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int selectedPage = 0;
 
+  // Abas já visitadas. As outras só são montadas (e só buscam notícias) na
+  // primeira vez que o usuário abre cada uma, em vez de tudo na abertura.
+  final Set<int> visited = {0};
+
   void goTo(int index) {
     setState(() {
       selectedPage = index;
+      visited.add(index);
     });
   }
 
@@ -292,10 +299,11 @@ class _AppShellState extends State<AppShell> {
     final pages = [
       HomePage(
         profile: widget.profile,
-        onOpenExplore: () => goTo(1),
-        onOpenProfile: () => goTo(3),
+        onOpenExplore: () => goTo(2),
+        onOpenProfile: () => goTo(4),
         onAddFavorite: addFavorite,
       ),
+      FeedPage(favorites: widget.profile.favoriteCategories),
       const ExplorePage(),
       SavedPage(onGoHome: () => goTo(0)),
       ProfilePage(
@@ -307,7 +315,13 @@ class _AppShellState extends State<AppShell> {
 
     return Scaffold(
       body: AmbientBackground(
-        child: IndexedStack(index: selectedPage, children: pages),
+        child: IndexedStack(
+          index: selectedPage,
+          children: [
+            for (var i = 0; i < pages.length; i++)
+              visited.contains(i) ? pages[i] : const SizedBox.shrink(),
+          ],
+        ),
       ),
       bottomNavigationBar: ListenableBuilder(
         listenable: savedArticles,
@@ -322,6 +336,11 @@ class _AppShellState extends State<AppShell> {
                 icon: Icon(Icons.home_outlined),
                 selectedIcon: Icon(Icons.home_rounded),
                 label: 'Início',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.dynamic_feed_outlined),
+                selectedIcon: Icon(Icons.dynamic_feed_rounded),
+                label: 'Feed',
               ),
               const NavigationDestination(
                 icon: Icon(Icons.explore_outlined),
