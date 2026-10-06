@@ -11,11 +11,14 @@ import 'package:http/testing.dart';
 import 'package:tech_news/appearance_page.dart';
 import 'package:tech_news/article_page.dart';
 import 'package:tech_news/favorite_topics_page.dart';
+import 'package:tech_news/feed_page.dart';
 import 'package:tech_news/home_page.dart';
 import 'package:tech_news/login_page.dart';
+import 'package:tech_news/logo.dart';
 import 'package:tech_news/news_api.dart';
 import 'package:tech_news/profile_page.dart';
 import 'package:tech_news/saved_page.dart';
+import 'package:tech_news/splash_screen.dart';
 import 'package:tech_news/supabase_service.dart';
 import 'package:tech_news/theme.dart';
 import 'package:tech_news/widgets.dart';
@@ -85,6 +88,16 @@ void main() {
             onAddFavorite: (_) {},
           ),
         ),
+    'feed': () => Scaffold(
+          body: FeedPage(favorites: profile.favoriteCategories),
+        ),
+    'cartão do feed': () => Scaffold(
+          body: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [FeedCard(article: article)],
+          ),
+        ),
+    'abertura': () => SplashScreen(onFinished: () {}),
     'salvos (vazio)': () => Scaffold(body: SavedPage(onGoHome: () {})),
     'perfil': () => Scaffold(
           body: ProfilePage(
@@ -239,6 +252,87 @@ void main() {
     }
     expect(find.byType(NewsListTile), findsNWidgets(2));
     expect(find.text('Notícia número 7'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('feed busca a próxima página ao chegar perto do fim', (
+    tester,
+  ) async {
+    final pagesRequested = <int>[];
+
+    // Backend falso com 40 notícias, 15 por página.
+    NewsApi.client = MockClient((request) async {
+      final page = int.parse(request.url.queryParameters['page'] ?? '1');
+      pagesRequested.add(page);
+      final items = List.generate(15, (i) {
+        final n = (page - 1) * 15 + i;
+        return {
+          'id': 'n$n',
+          'title': 'Notícia $n do feed',
+          'summary': 'Resumo $n',
+          'content': 'Conteúdo $n',
+          'url': 'https://example.com/$n',
+          'image_url': null,
+          'source': 'Tecnoblog',
+          'category': 'Mobile',
+          'published_at': DateTime.now().toUtc().toIso8601String(),
+        };
+      });
+      return http.Response.bytes(
+        utf8.encode(
+          jsonEncode({'items': items, 'total': 40, 'page': page, 'limit': 15}),
+        ),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    await pumpScreen(
+      tester,
+      sizes['celular pequeno']!,
+      AppLook.light,
+      Scaffold(body: FeedPage(favorites: profile.favoriteCategories)),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(pagesRequested, [1], reason: 'pedidos feitos na abertura');
+    expect(
+      find.text('Notícia 0 do feed'),
+      findsOneWidget,
+      reason: 'primeiro cartão do feed na tela',
+    );
+
+    // Rola aos poucos até o fim da lista: a página 2 deve ser pedida sozinha.
+    for (var i = 0; i < 8; i++) {
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -1500));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(
+      pagesRequested,
+      contains(2),
+      reason: 'páginas pedidas depois de rolar: $pagesRequested',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('abertura mostra o logo e depois abre o app', (tester) async {
+    await pumpScreen(
+      tester,
+      sizes['celular pequeno']!,
+      AppLook.light,
+      const SplashGate(child: Text('Página inicial')),
+    );
+
+    // Durante a abertura: logo na tela e o app ainda não.
+    expect(find.byType(TechNewsLogo), findsOneWidget);
+    expect(find.text('Página inicial'), findsNothing);
+
+    // Depois da animação (e da virada de tela), abre o app.
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Página inicial'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

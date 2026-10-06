@@ -122,6 +122,9 @@ class NewsImage extends StatelessWidget {
     return Image.network(
       url,
       fit: BoxFit.cover,
+      // Decodifica no tamanho de tela, não a foto inteira (que pode ter
+      // milhares de pixels): economiza memória e evita travadas ao rolar.
+      cacheWidth: 900,
       // Na versão web, usa <img> quando o site da imagem bloqueia o acesso (CORS).
       webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
       loadingBuilder: (context, child, progress) =>

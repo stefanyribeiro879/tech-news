@@ -5,6 +5,7 @@ from functools import partial
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 from app.config import get_settings
 from app.routers import news
@@ -43,6 +44,10 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+# Respostas de notícias são texto grande: compactar reduz bastante o download
+# (importante no 4G e no servidor gratuito). O app descompacta sozinho.
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.include_router(news.router)
 
