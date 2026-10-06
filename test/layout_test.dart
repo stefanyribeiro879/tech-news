@@ -295,21 +295,25 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(pagesRequested, [1]);
-    expect(find.text('Notícia 0 do feed'), findsOneWidget);
+    expect(pagesRequested, [1], reason: 'pedidos feitos na abertura');
+    expect(
+      find.text('Notícia 0 do feed'),
+      findsOneWidget,
+      reason: 'primeiro cartão do feed na tela',
+    );
 
-    // Rola até o fim da lista: a página 2 deve ser pedida sozinha.
-    for (var i = 0; i < 6; i++) {
-      await tester.fling(
-        find.byType(CustomScrollView),
-        const Offset(0, -2000),
-        3000,
-      );
-      await tester.pump(const Duration(milliseconds: 300));
+    // Rola aos poucos até o fim da lista: a página 2 deve ser pedida sozinha.
+    for (var i = 0; i < 8; i++) {
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -1500));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 100));
     }
-    await tester.pump(const Duration(milliseconds: 300));
 
-    expect(pagesRequested.contains(2), isTrue);
+    expect(
+      pagesRequested,
+      contains(2),
+      reason: 'páginas pedidas depois de rolar: $pagesRequested',
+    );
     expect(tester.takeException(), isNull);
   });
 
