@@ -134,6 +134,7 @@ class _PressableState extends State<Pressable> {
   bool pressed = false;
 
   void setPressed(bool value) {
+    if (!mounted) return;
     if (pressed != value) setState(() => pressed = value);
   }
 
