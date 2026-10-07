@@ -63,7 +63,37 @@ def test_descarta_noticia_com_link_perigoso():
     <item><title>Golpe</title><link>javascript:alert(1)</link></item>
     <item><title>Ok</title><link>https://exemplo.com/ok</link>
       <description>&lt;img src="javascript:x"&gt;</description></item>
-    </channel></rss>"""
+    </channel></rss>""".encode("utf-8")
     articles = parse_feed(feed, "Teste")
     assert [a.url for a in articles] == ["https://exemplo.com/ok"]
     assert articles[0].image_url is None
+
+
+STRICT_FEED = """<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><title>Feed generalista</title>
+  <item>
+    <title>Empresa anuncia resultado trimestral</title>
+    <link>https://exemplo.com/resultado</link>
+    <description>Os números do trimestre superaram a expectativa do mercado.</description>
+  </item>
+  <item>
+    <title>Google lança novo recurso no Chrome</title>
+    <link>https://exemplo.com/chrome</link>
+    <description>A novidade chega a todos os usuários nas próximas semanas.</description>
+  </item>
+  <item>
+    <title>OpenAI lança novo modelo de IA</title>
+    <link>https://exemplo.com/ia</link>
+    <description>O modelo promete ajudar desenvolvedores.</description>
+  </item>
+</channel></rss>""".encode("utf-8")
+
+
+def test_feed_estrito_descarta_geral_sem_tecnologia():
+    estrito = {a.url for a in parse_feed(STRICT_FEED, "Generalista", strict=True)}
+    assert estrito == {"https://exemplo.com/chrome", "https://exemplo.com/ia"}
+
+
+def test_feed_nao_estrito_mantem_geral_neutro():
+    normal = {a.url for a in parse_feed(STRICT_FEED, "Tecnologia")}
+    assert "https://exemplo.com/resultado" in normal

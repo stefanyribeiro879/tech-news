@@ -12,6 +12,7 @@ import httpx
 
 from app.schemas import Article
 from app.services.categorizer import categorize
+from app.services.scope import is_in_scope
 from app.sources.cleaner import clean_article_html, html_to_text  # noqa: F401 (html_to_text reexportado)
 
 
@@ -19,13 +20,16 @@ from app.sources.cleaner import clean_article_html, html_to_text  # noqa: F401 (
 class Feed:
     name: str
     url: str
+    # Feed generalista (mistura política, esporte, famosos...): só entra o que
+    # for de tecnologia. Feeds só de tecnologia ficam como False.
+    strict: bool = False
 
 
 FEEDS: list[Feed] = [
     Feed("Tecnoblog", "https://tecnoblog.net/feed/"),
-    Feed("Canaltech", "https://canaltech.com.br/rss/"),
-    Feed("Olhar Digital", "https://olhardigital.com.br/feed/"),
-    Feed("g1 Tecnologia", "https://g1.globo.com/rss/g1/tecnologia/"),
+    Feed("Canaltech", "https://canaltech.com.br/rss/", strict=True),
+    Feed("Olhar Digital", "https://olhardigital.com.br/feed/", strict=True),
+    Feed("g1 Tecnologia", "https://g1.globo.com/rss/g1/tecnologia/", strict=True),
     Feed("Tudocelular", "https://www.tudocelular.com/feed/"),
 ]
 
@@ -75,7 +79,7 @@ def _published(entry: feedparser.FeedParserDict) -> datetime:
     return datetime.now(timezone.utc)
 
 
-def parse_feed(raw: bytes | str, source: str) -> list[Article]:
+def parse_feed(raw: bytes | str, source: str, strict: bool = False) -> list[Article]:
     """Converte o XML de um feed em uma lista de Article (sem acessar a rede)."""
     parsed = feedparser.parse(raw)
     articles: list[Article] = []
@@ -94,6 +98,11 @@ def parse_feed(raw: bytes | str, source: str) -> list[Article]:
         content = clean_article_html(content_html) or clean_summary
         summary = truncate(clean_summary or content)
         tags = [t.get("term", "") for t in entry.get("tags", [])]
+        category = categorize(title, summary, tags)
+
+        # Fora do escopo do app (ex.: política, esporte, famosos): descarta.
+        if not is_in_scope(title, summary, category, strict=strict):
+            continue
 
         articles.append(
             Article(
@@ -104,7 +113,7 @@ def parse_feed(raw: bytes | str, source: str) -> list[Article]:
                 url=url,
                 image_url=_safe_image(entry, content_html + summary_html),
                 source=source,
-                category=categorize(title, summary, tags),
+                category=category,
                 published_at=_published(entry),
             )
         )
@@ -114,4 +123,4 @@ def parse_feed(raw: bytes | str, source: str) -> list[Article]:
 async def fetch_feed(client: httpx.AsyncClient, feed: Feed) -> list[Article]:
     response = await client.get(feed.url)
     response.raise_for_status()
-    return parse_feed(response.content, feed.name)
+    return parse_feed(response.content, feed.name, strict=feed.strict)

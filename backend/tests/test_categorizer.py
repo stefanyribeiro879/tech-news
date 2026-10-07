@@ -19,7 +19,7 @@ def test_categoria_pelo_titulo(title, expected):
 
 
 def test_ignora_acentos_e_maiusculas():
-    assert categorize("SEGURANÇA em alta") == "Segurança"
+    assert categorize("SEGURANÇA DIGITAL em alta") == "Segurança"
 
 
 def test_nao_confunde_palavras_parecidas():
@@ -29,3 +29,21 @@ def test_nao_confunde_palavras_parecidas():
 
 def test_titulo_pesa_mais_que_resumo():
     assert categorize("Novo jogo de Nintendo", "O app usa IA") == "Games"
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Corinthians vence jogo decisivo no Brasileirão",  # esporte, não Games
+        "Ataque militar deixa feridos na fronteira",  # guerra, não Segurança
+        "Segurança pública: governo anuncia novo plano",  # polícia, não Segurança
+        "Golpe de Estado é discutido no Congresso",  # política, não Segurança
+        "Novo vírus preocupa autoridades de saúde",  # saúde, não Segurança
+    ],
+)
+def test_nao_confunde_assuntos_fora_do_tema(title):
+    assert categorize(title) == DEFAULT_CATEGORY
+
+
+def test_jogo_fora_do_esporte_continua_sendo_games():
+    assert categorize("Novo jogo de terror chega ao PC") == "Games"

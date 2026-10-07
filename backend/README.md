@@ -61,6 +61,7 @@ Formato de cada notícia:
 
 - **Fontes** ([app/sources/rss.py](app/sources/rss.py)): lista de feeds e conversão de RSS para `Article`. Para adicionar uma fonte, basta incluir um `Feed(nome, url)` em `FEEDS`.
 - **Categorias** ([app/services/categorizer.py](app/services/categorizer.py)): definidas por palavras-chave (palavras no título valem o dobro). Sem correspondência, a notícia fica em `Geral`.
+- **Escopo** ([app/services/scope.py](app/services/scope.py)): descarta notícias que não são de tecnologia. Feeds generalistas (`strict=True` em `FEEDS`) só deixam passar o que tiver algum termo de tecnologia; feeds de tecnologia só perdem assuntos claramente alheios (futebol, política, famosos). Para ajustar o escopo, edite `TECH_TERMS` e `OFF_TOPIC_TERMS`.
 - **Agregador** ([app/services/aggregator.py](app/services/aggregator.py)): busca todos os feeds em paralelo, remove duplicadas pelo link, ordena por data e guarda em cache. Se um feed falhar, os outros continuam funcionando; se todos falharem, o cache anterior é mantido.
 - **Configuração** ([app/config.py](app/config.py)): pode ser alterada por variáveis de ambiente ou arquivo `.env` (veja `.env.example`).
 
