@@ -21,7 +21,11 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.47.6   # mesma versão usada no desenvolvimento local
           cache: true
+
+      - run: flutter --version
+      - run: grep -A8 "^  google_fonts:" pubspec.lock
 
       - run: flutter pub get
 
