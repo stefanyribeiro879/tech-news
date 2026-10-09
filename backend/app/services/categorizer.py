@@ -11,7 +11,7 @@ KEYWORDS: dict[str, list[str]] = {
     "Inteligência Artificial": [
         "inteligencia artificial", "ia", "ai", "chatgpt", "openai", "gemini",
         "claude", "anthropic", "llm", "copilot", "deepseek", "grok",
-        "machine learning", "aprendizado de maquina", "chatbot", "ias",
+        "machine learning", "aprendizado de maquina", "chatbot", "ias", "IAs", "ia generativa", "ia generativas", "inteligencias artificiais","IA",
     ],
     "Mobile": [
         "iphone", "android", "smartphone", "smartphones", "celular", "celulares",
