@@ -85,7 +85,7 @@ jobs:
           flutter build apk --release --obfuscate --split-debug-info=build/symbols $EXTRA
           mv build/app/outputs/flutter-apk/app-release.apk tech-news.apk
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           target_commitish: ${{ github.sha }}
