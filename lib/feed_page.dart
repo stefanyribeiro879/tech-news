@@ -34,6 +34,7 @@ class _FeedPageState extends State<FeedPage> {
   int page = 0; // última página carregada
   bool hasMore = true;
   bool loading = true; // primeira página
+  bool reloading = false; // primeira página sendo buscada de novo
   bool loadingMore = false;
   String? error; // erro na primeira página
   String? moreError; // erro ao carregar mais
@@ -50,10 +51,14 @@ class _FeedPageState extends State<FeedPage> {
   void didUpdateWidget(FeedPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Se o tema escolhido saiu dos favoritos, volta para "Todas".
+    // Espera o frame terminar: aqui ainda estamos no meio do build e não é
+    // hora de mexer na rolagem.
     if (!listEquals(oldWidget.favorites, widget.favorites) &&
         category != null &&
         !widget.favorites.contains(category)) {
-      chooseCategory(null);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) chooseCategory(null);
+      });
     }
   }
 
@@ -84,7 +89,15 @@ class _FeedPageState extends State<FeedPage> {
 
   void chooseCategory(String? value) {
     if (value == category) return;
-    setState(() => category = value);
+    setState(() {
+      category = value;
+      // Tira as notícias do tema anterior: assim aparece o "carregando" e
+      // não misturamos páginas de temas diferentes.
+      items.clear();
+      _ids.clear();
+      page = 0;
+      hasMore = true;
+    });
     if (scrollController.hasClients) scrollController.jumpTo(0);
     reload();
   }
@@ -92,9 +105,11 @@ class _FeedPageState extends State<FeedPage> {
   // Volta para a primeira página (abertura, troca de tema e puxar para baixo).
   Future<void> reload() async {
     final request = ++_request;
+    reloading = true;
 
     setState(() {
       loading = items.isEmpty; // com lista na tela, o indicador é o do puxar
+      loadingMore = false; // um "carregar mais" pendente será descartado
       error = null;
       moreError = null;
     });
@@ -116,22 +131,39 @@ class _FeedPageState extends State<FeedPage> {
           ..addAll(result.items.map((a) => a.id));
         page = 1;
         hasMore = result.hasMore;
+        reloading = false;
         loading = false;
         loadingMore = false;
       });
       _fillScreenIfNeeded();
     } catch (e) {
       if (!mounted || request != _request) return;
+      final keepList = items.isNotEmpty;
       setState(() {
-        error = e.toString();
+        // Se já havia notícias na tela, elas continuam lá: só avisamos.
+        if (!keepList) error = e.toString();
+        reloading = false;
         loading = false;
         loadingMore = false;
       });
+      if (keepList) {
+        ScaffoldMessenger.maybeOf(context)
+          ?..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Não foi possível atualizar o feed agora.'),
+            ),
+          );
+      }
     }
   }
 
   Future<void> loadMore() async {
-    if (loading || loadingMore || !hasMore || error != null) return;
+    // Enquanto a primeira página é buscada de novo, o número da página atual
+    // não vale mais: espera ela chegar.
+    if (loading || reloading || loadingMore || !hasMore || error != null) {
+      return;
+    }
 
     final request = _request;
     setState(() {

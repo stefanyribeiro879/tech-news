@@ -2,6 +2,7 @@
 // nada "estoura" o layout (as faixas amarelas e pretas do Flutter).
 // Rodar com: flutter test
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -314,6 +315,66 @@ void main() {
       contains(2),
       reason: 'páginas pedidas depois de rolar: $pagesRequested',
     );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('feed limpa a lista ao trocar de tema', (tester) async {
+    final requests = <String>[];
+    Completer<void>? hold; // segura a resposta para ver o "carregando"
+
+    NewsApi.client = MockClient((request) async {
+      final category = request.url.queryParameters['category'] ?? 'Todas';
+      final page = int.parse(request.url.queryParameters['page'] ?? '1');
+      requests.add('$category $page');
+      await hold?.future;
+
+      final items = List.generate(15, (i) {
+        return {
+          'id': '$category-$page-$i',
+          'title': '$category $i',
+          'summary': 'Resumo $i',
+          'content': 'Conteúdo $i',
+          'url': 'https://example.com/$i',
+          'image_url': null,
+          'source': 'Tecnoblog',
+          'category': 'Mobile',
+          'published_at': DateTime.now().toUtc().toIso8601String(),
+        };
+      });
+      return http.Response.bytes(
+        utf8.encode(
+          jsonEncode({'items': items, 'total': 40, 'page': page, 'limit': 15}),
+        ),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    await pumpScreen(
+      tester,
+      sizes['celular pequeno']!,
+      AppLook.light,
+      const Scaffold(body: FeedPage(favorites: ['Mobile'])),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Todas 0'), findsOneWidget);
+
+    hold = Completer<void>();
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Mobile'));
+    await tester.pump();
+
+    expect(
+      find.text('Todas 0'),
+      findsNothing,
+      reason: 'notícias do tema anterior não devem ficar na tela',
+    );
+    expect(find.byType(LoadingState), findsOneWidget);
+
+    hold.complete();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Mobile 0'), findsOneWidget);
+    expect(requests, ['Todas 1', 'Mobile 1']);
     expect(tester.takeException(), isNull);
   });
 
