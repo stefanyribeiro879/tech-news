@@ -2,5 +2,5 @@ fastapi==0.141.1
 uvicorn==0.54.0
 httpx==0.28.1
 feedparser==6.0.14
-pydantic-settings==2.15.0
+pydantic-settings==2.16.0
 beautifulsoup4==4.15.0
