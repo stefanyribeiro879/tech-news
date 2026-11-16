@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
-import 'logo.dart';
 import 'motion.dart';
 import 'theme.dart';
 
 // ======================================================
 // ABERTURA DO APP
-// Ao abrir, o logo aparece com um efeito (surge crescendo, um halo se
-// expande e um brilho passa por cima). Ao terminar, aparece a dica "Toque
-// para continuar" e a tela só vira para o app (login ou página inicial)
-// quando o usuário toca. Respeita a aparência escolhida:
-//   rich   = efeito completo (~2,4 s)
-//   normal = surge e brilha (~1,8 s)
-//   simple = só aparece (~1,0 s)
-// Com "remover animações" ligado no Android, mostra o logo parado.
+// Arte em JPEG (estilo editorial) com o resumo do app, em duas versões:
+//   assets/images/abertura_mobile.jpg  (tela em pé: celular)
+//   assets/images/abertura_desktop.jpg (tela deitada: computador)
+// As imagens são geradas a partir de design/abertura/abertura.html
+// (script design/abertura/gerar.ps1).
+// A arte surge com um efeito leve e, em seguida, aparece a dica "Toque para
+// continuar" (no computador, "Clique"). A tela só vira para o app (login ou
+// página inicial) quando o usuário toca. A duração do efeito segue a
+// aparência escolhida; com "remover animações" ligado, a arte aparece parada.
 // ======================================================
 
 class SplashGate extends StatefulWidget {
@@ -52,6 +52,13 @@ class SplashScreen extends StatefulWidget {
 
   const SplashScreen({super.key, required this.onFinished});
 
+  // Cor de fundo das artes (as bordas da imagem se esfumam nela).
+  static const background = Color(0xFF0E0B1F);
+  static const _hintColor = Color(0xFFA79FD1);
+
+  static const mobileArt = 'assets/images/abertura_mobile.jpg';
+  static const desktopArt = 'assets/images/abertura_desktop.jpg';
+
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
@@ -60,15 +67,12 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final controller = AnimationController(vsync: this);
   bool started = false;
-  bool animated = true;
-  // A dica "Toque para continuar" aparece quando o logo termina de surgir.
+  // A dica "Toque para continuar" aparece quando a arte termina de surgir.
   bool ready = false;
   bool leaving = false;
 
   late Animation<double> fade;
   late Animation<double> scale;
-  late Animation<double> halo;
-  late Animation<double> shine;
 
   @override
   void didChangeDependencies() {
@@ -76,47 +80,33 @@ class _SplashScreenState extends State<SplashScreen>
     if (started) return;
     started = true;
 
-    final level = context.motion;
     final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
-    // Sem animação: logo parado, já esperando o toque.
+    // Sem animação: arte parada, já esperando o toque.
     if (reduce) {
-      animated = false;
       fade = const AlwaysStoppedAnimation<double>(1);
       scale = const AlwaysStoppedAnimation<double>(1);
-      halo = const AlwaysStoppedAnimation<double>(1);
-      shine = const AlwaysStoppedAnimation<double>(1);
       ready = true;
       return;
     }
 
-    final total = switch (level) {
-      MotionLevel.rich => 2400,
-      MotionLevel.normal => 1800,
-      MotionLevel.simple => 1000,
-    };
-    controller.duration = Duration(milliseconds: total);
-
-    CurvedAnimation interval(double a, double b, Curve curve) =>
-        CurvedAnimation(
-          parent: controller,
-          curve: Interval(a, b, curve: curve),
-        );
-
-    fade = interval(0.0, 0.35, Curves.easeOut);
-    scale = Tween<double>(begin: 0.7, end: 1.0).animate(
-      interval(
-        0.0,
-        0.5,
-        level == MotionLevel.rich ? Curves.easeOutBack : Curves.easeOutCubic,
-      ),
+    final level = context.motion;
+    controller.duration = Duration(
+      milliseconds: switch (level) {
+        MotionLevel.rich => 1400,
+        MotionLevel.normal => 1000,
+        MotionLevel.simple => 600,
+      },
     );
-    halo = level == MotionLevel.simple
-        ? const AlwaysStoppedAnimation<double>(1)
-        : interval(0.1, 0.75, Curves.easeOutCubic);
-    shine = level == MotionLevel.simple
-        ? const AlwaysStoppedAnimation<double>(1)
-        : interval(0.5, 0.9, Curves.easeInOut);
+
+    fade = CurvedAnimation(
+      parent: controller,
+      curve: const Interval(0, 0.7, curve: Curves.easeOut),
+    );
+    scale = Tween<double>(
+      begin: level == MotionLevel.simple ? 1.0 : 1.04,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: controller, curve: Curves.easeOutCubic));
 
     controller.addStatusListener((status) {
       if (status == AnimationStatus.completed && mounted) {
@@ -141,101 +131,52 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final tint = context.colors.primary;
+    final size = MediaQuery.sizeOf(context);
+    final wide = size.width > size.height;
+    final hint = wide ? 'Clique para continuar' : 'Toque para continuar';
 
     return Scaffold(
+      backgroundColor: SplashScreen.background,
       body: Semantics(
         button: true,
-        label: 'Toque para continuar',
+        label: hint,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: _continue,
           child: Stack(
             children: [
+              // A arte inteira sempre visível (sem cortar texto); o que
+              // sobrar da tela fica na cor de fundo da própria arte.
               Positioned.fill(
-                child: Center(
-                  child: AnimatedBuilder(
-                    animation: controller,
-                    builder: (context, _) {
-                      final haloValue = halo.value;
-                      final shineValue = shine.value;
-
-                      return Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Halo: um círculo de luz que se expande e some devagar.
-                          if (animated)
-                            IgnorePointer(
-                              child: Container(
-                                width: 120 + 280 * haloValue,
-                                height: 120 + 280 * haloValue,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: RadialGradient(
-                                    colors: [
-                                      tint.withValues(
-                                        alpha: 0.30 * (1 - haloValue * 0.7),
-                                      ),
-                                      tint.withValues(alpha: 0),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          Opacity(
-                            opacity: fade.value.clamp(0.0, 1.0),
-                            child: Transform.scale(
-                              scale: scale.value,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                ),
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  // Brilho: uma faixa clara atravessa o logo da esquerda
-                                  // para a direita (fora da tela quando está em 0 ou em 1).
-                                  child: ShaderMask(
-                                    blendMode: BlendMode.srcATop,
-                                    shaderCallback: (rect) {
-                                      final t = shineValue.clamp(0.0, 1.0);
-                                      return LinearGradient(
-                                        begin: Alignment(-3 + 4 * t, -0.3),
-                                        end: Alignment(-2 + 4 * t, 0.3),
-                                        colors: [
-                                          Colors.white.withValues(alpha: 0),
-                                          Colors.white.withValues(alpha: 0.55),
-                                          Colors.white.withValues(alpha: 0),
-                                        ],
-                                      ).createShader(rect);
-                                    },
-                                    child: const TechNewsLogo(height: 76),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
+                child: FadeTransition(
+                  opacity: fade,
+                  child: ScaleTransition(
+                    scale: scale,
+                    child: Image.asset(
+                      wide ? SplashScreen.desktopArt : SplashScreen.mobileArt,
+                      fit: BoxFit.contain,
+                      excludeFromSemantics: true,
+                    ),
                   ),
                 ),
               ),
-              // Dica no rodapé, surge quando o logo está completo.
+              // Dica no rodapé, surge quando a arte está completa.
               Positioned(
                 left: 24,
                 right: 24,
-                bottom: 48,
+                bottom: 32,
                 child: SafeArea(
                   top: false,
                   child: AnimatedOpacity(
                     opacity: ready ? 1 : 0,
                     duration: motionDuration(context, base: 400),
                     child: Text(
-                      'Toque para continuar',
+                      hint,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: context.colors.onSurfaceVariant,
-                        letterSpacing: 0.5,
+                        color: SplashScreen._hintColor,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
                       ),
                     ),
                   ),

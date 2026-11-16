@@ -15,7 +15,6 @@ import 'package:tech_news/favorite_topics_page.dart';
 import 'package:tech_news/feed_page.dart';
 import 'package:tech_news/home_page.dart';
 import 'package:tech_news/login_page.dart';
-import 'package:tech_news/logo.dart';
 import 'package:tech_news/news_api.dart';
 import 'package:tech_news/profile_page.dart';
 import 'package:tech_news/saved_page.dart';
@@ -386,8 +385,8 @@ void main() {
       const SplashGate(child: Text('Página inicial')),
     );
 
-    // Durante a abertura: logo na tela e o app ainda não.
-    expect(find.byType(TechNewsLogo), findsOneWidget);
+    // Durante a abertura: arte na tela e o app ainda não.
+    expect(find.byType(Image), findsOneWidget);
     expect(find.text('Página inicial'), findsNothing);
 
     // Terminada a animação, continua no logo, esperando o toque.
@@ -397,7 +396,7 @@ void main() {
     expect(find.text('Toque para continuar'), findsOneWidget);
 
     // Com o toque, vira para o app.
-    await tester.tap(find.byType(TechNewsLogo));
+    await tester.tap(find.byType(Image));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Página inicial'), findsOneWidget);

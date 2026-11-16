@@ -1,0 +1,248 @@
+<!doctype html>
+<!--
+  Arte da tela de abertura (estilo editorial).
+  Gera as imagens assets/images/abertura_mobile.jpg e abertura_desktop.jpg
+  pelo script gerar.ps1 (mesma pasta). Abra com #mobile ou #desktop.
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Tech News · Abertura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Nunito:wght@400;600;800;900&display=block" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0E0B1F;
+    --card: #1A1533;
+    --line: #2F2757;
+    --ink: #F4F1FF;
+    --soft: #A79FD1;
+    --violet: #7C5CFF;
+    --pink: #FF6AD5;
+    --teal: #22E4C7;
+    --brand: #2317FA;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); }
+  body {
+    font-family: 'Nunito', system-ui, sans-serif;
+    color: var(--ink);
+    overflow: hidden;
+  }
+  .page {
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 85% 8%, rgba(124, 92, 255, .30), transparent 38%),
+      radial-gradient(circle at 8% 92%, rgba(34, 228, 199, .16), transparent 40%),
+      radial-gradient(circle at 50% 55%, rgba(255, 106, 213, .08), transparent 55%),
+      var(--bg);
+  }
+
+  /* Fundo editorial: colunas de "texto de jornal" desfocadas. */
+  .paper {
+    position: absolute; inset: 0;
+    display: grid; gap: 48px;
+    opacity: .5;
+    filter: blur(1.2px);
+    -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,.25) 45%, rgba(0,0,0,.9));
+            mask-image: linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,.25) 45%, rgba(0,0,0,.9));
+  }
+  .paper .col { display: flex; flex-direction: column; gap: 16px; }
+  .paper .hl { height: 26px; border-radius: 4px; background: #3A3168; }
+  .paper .tx { height: 9px; border-radius: 5px; background: #2A2350; }
+  .paper .ph { border-radius: 10px; background: linear-gradient(135deg, #2C2456, #1E1940); }
+
+  /* Bordas esfumadas na cor do fundo: no app, a imagem se encaixa em telas
+     de outras proporções sem emenda visível. */
+  .page::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    box-shadow: inset 0 0 120px 70px var(--bg);
+  }
+  .content { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; }
+
+  /* Cabeçalho de jornal */
+  .masthead {
+    display: flex; align-items: center; justify-content: space-between;
+    border-top: 6px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    font-weight: 800; text-transform: uppercase; letter-spacing: .22em;
+    color: var(--soft);
+  }
+  .masthead b { color: var(--ink); }
+  .masthead .dot { display: inline-block; width: .55em; height: .55em; border-radius: 50%;
+                   background: var(--teal); margin-right: .7em; box-shadow: 0 0 18px var(--teal); }
+
+  .logo { display: flex; align-items: center; }
+  .logo svg { display: block; }
+  .logo .words { display: flex; flex-direction: column; font-weight: 900; line-height: .86; }
+  .logo .tech { color: var(--ink); }
+  .logo .news { background: linear-gradient(90deg, var(--pink), var(--violet));
+                -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  .kicker { font-weight: 800; text-transform: uppercase; letter-spacing: .2em; color: var(--teal); }
+  h1 {
+    font-family: 'Fraunces', Georgia, serif; font-weight: 800;
+    line-height: 1.02; letter-spacing: -.02em;
+  }
+  h1 em { font-style: normal;
+          background: linear-gradient(90deg, var(--teal), var(--violet) 55%, var(--pink));
+          -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lead { color: #D5CFF3; font-weight: 600; line-height: 1.45; }
+  .lead b { color: var(--ink); font-weight: 900; }
+
+  .rule { height: 2px; background: var(--line); }
+
+  .features { display: grid; }
+  .feature { border-top: 3px solid var(--violet); padding-top: .8em; }
+  .feature:nth-child(2) { border-color: var(--teal); }
+  .feature:nth-child(3) { border-color: var(--pink); }
+  .feature:nth-child(4) { border-color: #F2A93B; }
+  .feature .n { font-family: 'Fraunces', Georgia, serif; font-weight: 800; color: var(--soft); }
+  .feature h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 600; line-height: 1.1; margin: .2em 0 .35em; }
+  .feature p { color: var(--soft); font-weight: 600; line-height: 1.4; }
+
+  .topics { display: flex; flex-wrap: wrap; }
+  .topic {
+    display: inline-flex; align-items: center; gap: .55em;
+    border: 2px solid var(--c); border-radius: 999px;
+    background: color-mix(in srgb, var(--c) 16%, transparent);
+    font-weight: 800; color: var(--ink);
+  }
+  .topic i { width: .7em; height: .7em; border-radius: 50%; background: var(--c); }
+
+  .credit { color: var(--soft); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+
+  /* ---------- CELULAR 1080 x 1920 ---------- */
+  body.mobile .page { width: 1080px; height: 1920px; }
+  body.mobile .paper { grid-template-columns: repeat(3, 1fr); padding: 120px 64px; }
+  body.mobile .content { padding: 72px 84px 0; }
+  body.mobile .masthead { font-size: 22px; padding: 18px 0; }
+  body.mobile .logo { gap: 22px; margin-top: 64px; }
+  body.mobile .logo svg { height: 132px; }
+  body.mobile .logo .words { font-size: 77px; letter-spacing: -2.3px; }
+  body.mobile .kicker { font-size: 24px; margin-top: 56px; }
+  body.mobile h1 { font-size: 96px; margin-top: 20px; }
+  body.mobile .lead { font-size: 35px; margin-top: 32px; }
+  body.mobile .rule { margin: 48px 0 40px; }
+  body.mobile .features { grid-template-columns: 1fr 1fr; gap: 36px 48px; }
+  body.mobile .feature .n { font-size: 26px; }
+  body.mobile .feature h2 { font-size: 42px; }
+  body.mobile .feature p { font-size: 27px; }
+  body.mobile .topics { gap: 14px; margin-top: 44px; }
+  body.mobile .topic { font-size: 25px; padding: 10px 20px; }
+  body.mobile .credit { font-size: 19px; margin-top: 32px; }
+  /* Rodapé livre (~260px) para o "Toque para continuar" do app. */
+
+  /* ---------- COMPUTADOR 1920 x 1080 ---------- */
+  body.desktop .page { width: 1920px; height: 1080px; }
+  body.desktop .paper { grid-template-columns: repeat(6, 1fr); padding: 100px 80px; }
+  body.desktop .content { padding: 56px 110px 0; }
+  body.desktop .masthead { font-size: 17px; padding: 14px 0; }
+  body.desktop .cols { display: grid; grid-template-columns: 1.05fr 1fr; gap: 110px; margin-top: 80px; }
+  body.desktop .logo { gap: 18px; }
+  body.desktop .logo svg { height: 96px; }
+  body.desktop .logo .words { font-size: 56px; letter-spacing: -1.7px; }
+  body.desktop .kicker { font-size: 18px; margin-top: 52px; }
+  body.desktop h1 { font-size: 78px; margin-top: 16px; }
+  body.desktop .lead { font-size: 26px; margin-top: 28px; }
+  body.desktop .topics { gap: 12px; margin-top: 40px; }
+  body.desktop .topic { font-size: 20px; padding: 9px 18px; }
+  body.desktop .right { border-left: 2px solid var(--line); padding-left: 80px; padding-top: 6px;
+                        display: flex; flex-direction: column; }
+  body.desktop .features { grid-template-columns: 1fr 1fr; gap: 76px 56px; }
+  body.desktop .feature .n { font-size: 19px; }
+  body.desktop .feature h2 { font-size: 36px; }
+  body.desktop .feature p { font-size: 21px; }
+  body.desktop .credit { font-size: 15px; margin-top: auto; padding-top: 40px; }
+  body.desktop .rule { display: none; }
+  /* Rodapé livre (~150px) para o "Clique para continuar" do app. */
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="paper" id="paper"></div>
+
+  <div class="content">
+    <div class="masthead">
+      <span><span class="dot"></span><b>Edição digital</b></span>
+      <span>Notícias de tecnologia</span>
+    </div>
+
+    <div class="cols">
+      <div class="left">
+        <div class="logo">
+          <svg viewBox="0 0 230 248" aria-label="Tech News">
+            <defs>
+              <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#22E4C7"/>
+                <stop offset="1" stop-color="#7C5CFF"/>
+              </linearGradient>
+            </defs>
+            <polygon fill="url(#mark)" points="0,8 188,196 188,248 180,248 42,110 42,248 0,248"/>
+            <polygon fill="url(#mark)" points="18,0 230,0 230,41 181,41 181,105 230,154 230,248 188,248 188,170 140,122 140,41 59,41"/>
+          </svg>
+          <div class="words"><span class="tech">Tech</span><span class="news">News</span></div>
+        </div>
+
+        <p class="kicker">Seu jornal de tecnologia</p>
+        <h1>A tecnologia que importa, <em>em um só lugar.</em></h1>
+        <p class="lead">O <b>Tech News</b> reúne as notícias dos principais sites de tecnologia e organiza tudo de acordo com os <b>seus interesses</b>.</p>
+
+        <div class="topics only-desktop"></div>
+      </div>
+
+      <div class="right">
+        <div class="rule"></div>
+        <div class="features">
+          <div class="feature"><span class="n">01</span><h2>Feed sempre novo</h2><p>As notícias mais recentes, uma após a outra, atualizadas o tempo todo.</p></div>
+          <div class="feature"><span class="n">02</span><h2>Seus temas</h2><p>Escolha os favoritos e veja primeiro o que mais te interessa.</p></div>
+          <div class="feature"><span class="n">03</span><h2>Salve para depois</h2><p>Guarde notícias na sua conta e leia quando quiser.</p></div>
+          <div class="feature"><span class="n">04</span><h2>Do seu jeito</h2><p>Cinco aparências, do claro ao escuro vivo.</p></div>
+        </div>
+        <div class="topics only-mobile"></div>
+        <p class="credit">Projeto A3 · Redes de Computadores</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const layout = location.hash === '#desktop' ? 'desktop' : 'mobile';
+  document.body.classList.add(layout);
+  document.querySelectorAll(layout === 'desktop' ? '.only-mobile' : '.only-desktop')
+    .forEach((el) => el.remove());
+
+  // Os mesmos temas e cores do app (lib/theme.dart).
+  const topics = [
+    ['Inteligência Artificial', '#7C6CF6'],
+    ['Mobile', '#14B8A6'],
+    ['Games', '#F97366'],
+    ['Segurança', '#F2A93B'],
+    ['Geral', '#3B82F6'],
+  ];
+  document.querySelector('.topics').innerHTML = topics
+    .map(([name, c]) => `<span class="topic" style="--c:${c}"><i></i>${name}</span>`)
+    .join('');
+
+  // Colunas de jornal ao fundo (padrão fixo, sem aleatoriedade).
+  const paper = document.getElementById('paper');
+  const cols = layout === 'desktop' ? 6 : 3;
+  for (let c = 0; c < cols; c++) {
+    const col = document.createElement('div');
+    col.className = 'col';
+    let html = '';
+    for (let block = 0; block < 6; block++) {
+      const k = (c * 7 + block * 3) % 5;
+      html += `<div class="hl" style="width:${70 + k * 6}%"></div>`;
+      if ((c + block) % 3 === 1) html += `<div class="ph" style="height:${110 + k * 20}px"></div>`;
+      for (let l = 0; l < 6 + k; l++) {
+        html += `<div class="tx" style="width:${l === 5 + k ? 45 + k * 8 : 92 + ((l * 13 + c) % 9)}%"></div>`;
+      }
+    }
+    col.innerHTML = html;
+    paper.appendChild(col);
+  }
+</script>
+</body>
+</html>
