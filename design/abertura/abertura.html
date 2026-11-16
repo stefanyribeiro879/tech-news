@@ -2,7 +2,8 @@
 <!--
   Arte da tela de abertura (estilo editorial).
   Gera as imagens assets/images/abertura_mobile.jpg e abertura_desktop.jpg
-  pelo script gerar.ps1 (mesma pasta). Abra com #mobile ou #desktop.
+  pelo script gerar.py (mesma pasta), que também roda sozinho nos workflows
+  de publicação. Abra com #mobile ou #desktop.
 -->
 <html lang="pt-BR">
 <head>
@@ -243,6 +244,13 @@
     col.innerHTML = html;
     paper.appendChild(col);
   }
+
+  // Sinal para o gerar.py de que as fontes da arte carregaram.
+  document.fonts.ready.then(() => {
+    const ok = ['800 20px "Fraunces"', '900 20px "Nunito"']
+      .every((font) => document.fonts.check(font));
+    document.body.dataset.fonts = ok ? 'ok' : 'falha';
+  });
 </script>
 </body>
 </html>

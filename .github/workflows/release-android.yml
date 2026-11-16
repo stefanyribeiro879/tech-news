@@ -69,6 +69,16 @@ jobs:
           keyPassword=$KEYSTORE_PASSWORD
           EOF
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Gerar a arte da abertura
+        # Recria assets/images/abertura_*.jpg a partir de design/abertura/abertura.html.
+        run: |
+          pip install --quiet pillow
+          python design/abertura/gerar.py
+
       - run: flutter pub get
 
       - name: Rodar os testes

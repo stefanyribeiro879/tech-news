@@ -8,8 +8,8 @@ import 'theme.dart';
 // Arte em JPEG (estilo editorial) com o resumo do app, em duas versões:
 //   assets/images/abertura_mobile.jpg  (tela em pé: celular)
 //   assets/images/abertura_desktop.jpg (tela deitada: computador)
-// As imagens são geradas a partir de design/abertura/abertura.html
-// (script design/abertura/gerar.ps1).
+// As imagens são geradas a partir de design/abertura/abertura.html pelo
+// script design/abertura/gerar.py, que roda sozinho antes de cada publicação.
 // A arte surge com um efeito leve e, em seguida, aparece a dica "Toque para
 // continuar" (no computador, "Clique"). A tela só vira para o app (login ou
 // página inicial) quando o usuário toca. A duração do efeito segue a
