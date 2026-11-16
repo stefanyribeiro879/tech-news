@@ -38,7 +38,7 @@ dependencies:
   url_launcher: ^6.3.2
   supabase_flutter: ^2.17.2
   shared_preferences: ^2.5.5
-  google_fonts: ^8.2.1
+  google_fonts: ^9.0.0
   package_info_plus: ^10.2.1
   ota_update: ^7.1.0
   web: ^1.1.1
