@@ -378,7 +378,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('abertura mostra o logo e depois abre o app', (tester) async {
+  testWidgets('abertura mostra o logo e só abre o app com um toque', (tester) async {
     await pumpScreen(
       tester,
       sizes['celular pequeno']!,
@@ -390,8 +390,15 @@ void main() {
     expect(find.byType(TechNewsLogo), findsOneWidget);
     expect(find.text('Página inicial'), findsNothing);
 
-    // Depois da animação (e da virada de tela), abre o app.
+    // Terminada a animação, continua no logo, esperando o toque.
     await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Página inicial'), findsNothing);
+    expect(find.text('Toque para continuar'), findsOneWidget);
+
+    // Com o toque, vira para o app.
+    await tester.tap(find.byType(TechNewsLogo));
+    await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Página inicial'), findsOneWidget);
     expect(tester.takeException(), isNull);
