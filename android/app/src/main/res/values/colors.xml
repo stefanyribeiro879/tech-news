@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mesma cor de fundo da abertura (lib/splash_screen.dart), para não piscar branco ao abrir. -->
+    <color name="launch_background">#FF050722</color>
+</resources>

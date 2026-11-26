@@ -72,6 +72,7 @@ Future<void> pumpScreen(
 }
 
 void main() {
+  SplashScreen.useWebFonts = false;
   final screens = <String, Widget Function()>{
     'cadastro/login': () => const AuthFlow(),
     'temas (primeiro acesso)': () => FavoriteTopicsPage(
@@ -377,7 +378,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('abertura mostra o logo e só abre o app com um toque', (tester) async {
+  testWidgets('abertura mostra o logo e abre o app sozinha ou com um toque', (
+    tester,
+  ) async {
     await pumpScreen(
       tester,
       sizes['celular pequeno']!,
@@ -385,18 +388,30 @@ void main() {
       const SplashGate(child: Text('Página inicial')),
     );
 
-    // Durante a abertura: arte na tela e o app ainda não.
-    expect(find.byType(Image), findsOneWidget);
+    // Durante a abertura: o texto da marca na tela e o app ainda não.
+    expect(find.text('Tech'), findsOneWidget);
+    expect(find.text('News'), findsOneWidget);
     expect(find.text('Página inicial'), findsNothing);
 
-    // Terminada a animação, continua no logo, esperando o toque.
+    // Sem tocar, a abertura termina e vira para o app sozinha.
     await tester.pump(const Duration(seconds: 3));
+    await tester.pump(SplashScreen.holdAfterAnimation);
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text('Página inicial'), findsNothing);
-    expect(find.text('Toque para continuar'), findsOneWidget);
+    expect(find.text('Página inicial'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
-    // Com o toque, vira para o app.
-    await tester.tap(find.byType(Image));
+  testWidgets('um toque na abertura pula direto para o app', (tester) async {
+    await pumpScreen(
+      tester,
+      sizes['celular pequeno']!,
+      AppLook.light,
+      const SplashGate(child: Text('Página inicial')),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Página inicial'), findsNothing);
+
+    await tester.tap(find.text('Tech'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Página inicial'), findsOneWidget);
