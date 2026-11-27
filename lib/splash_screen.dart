@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -24,9 +23,11 @@ import 'theme.dart';
 //   2. a marca "NT" surge crescendo, com um brilho azul atrás;
 //   3. "Tech" e depois "News" deslizam da direita para o lugar;
 //   4. o texto de baixo sobe suavemente.
-// Depois de um instante parada, a tela vira para o app (login ou página
-// inicial) sozinha; um toque em qualquer ponto também pula a abertura.
-// Com "remover animações" ligado, a tela aparece pronta e parada.
+//   5. o botão "Continuar" surge embaixo.
+// Terminada a animação, a tela fica parada até o usuário tocar em
+// "Continuar"; só então abre o app (login ou página inicial). Tocar no resto
+// da tela não faz nada.
+// Com "remover animações" ligado, a tela e o botão aparecem prontos e parados.
 // ======================================================
 
 class SplashGate extends StatefulWidget {
@@ -69,9 +70,6 @@ class SplashScreen extends StatefulWidget {
   // (os testes não acessam a internet).
   static bool useWebFonts = true;
 
-  // Tempo que a tela fica parada depois da animação, antes de abrir o app.
-  static const holdAfterAnimation = Duration(milliseconds: 900);
-
   // Cores tiradas da arte de referência.
   static const background = Color(0xFF050722);
   static const markColor = Color(0xFF3B2FFF);
@@ -96,7 +94,10 @@ class _SplashScreenState extends State<SplashScreen>
 
   bool started = false;
   bool leaving = false;
-  Timer? holdTimer;
+
+  // O botão "Continuar" só aparece (e só aceita toque) depois da animação.
+  bool buttonReady = false;
+  Duration buttonFade = const Duration(milliseconds: 450);
 
   late Animation<double> background;
   late Animation<double> mark;
@@ -118,10 +119,11 @@ class _SplashScreenState extends State<SplashScreen>
     final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     const still = AlwaysStoppedAnimation<double>(1);
 
-    // Sem animação: tudo pronto e parado; só espera o tempo de abertura.
+    // Sem animação: tudo pronto e parado, já com o botão à mostra.
     if (reduce) {
       background = mark = markScale = tech = news = tagline = still;
-      holdTimer = Timer(SplashScreen.holdAfterAnimation, _continue);
+      buttonReady = true;
+      buttonFade = Duration.zero;
       return;
     }
 
@@ -157,7 +159,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     entrance.addStatusListener((status) {
       if (status == AnimationStatus.completed && mounted) {
-        holdTimer = Timer(SplashScreen.holdAfterAnimation, _continue);
+        setState(() => buttonReady = true);
       }
     });
     entrance.forward();
@@ -166,13 +168,12 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
-    holdTimer?.cancel();
     entrance.dispose();
     ambient.dispose();
     super.dispose();
   }
 
-  // Vira para o app (uma vez só): sozinho no fim ou com um toque.
+  // Vira para o app (uma vez só), quando o usuário toca em "Continuar".
   void _continue() {
     if (leaving || !mounted) return;
     leaving = true;
@@ -197,16 +198,13 @@ class _SplashScreenState extends State<SplashScreen>
 
     return Scaffold(
       backgroundColor: SplashScreen.background,
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: _continue,
-        child: Semantics(
-          button: true,
-          label: 'Tech News. As notícias de tecnologia que importam para você.',
-          child: LayoutBuilder(
-            builder: (context, box) {
-              final m = _Metrics(box.maxWidth, box.maxHeight);
-              return AnimatedBuilder(
+      body: LayoutBuilder(
+        builder: (context, box) {
+          final m = _Metrics(box.maxWidth, box.maxHeight);
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              AnimatedBuilder(
                 animation: Listenable.merge([entrance, ambient]),
                 builder: (context, _) => Stack(
                   clipBehavior: Clip.none,
@@ -248,8 +246,53 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ],
                 ),
-              );
-            },
+              ),
+              // Botão "Continuar": surge quando a animação termina.
+              Positioned(
+                left: 24,
+                right: 24,
+                bottom: MediaQuery.paddingOf(context).bottom + 40,
+                child: _continueButton(),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _continueButton() {
+    return IgnorePointer(
+      ignoring: !buttonReady,
+      child: ExcludeSemantics(
+        excluding: !buttonReady,
+        child: AnimatedOpacity(
+          opacity: buttonReady ? 1 : 0,
+          duration: buttonFade,
+          curve: Curves.easeOut,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: FilledButton(
+                  onPressed: _continue,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: SplashScreen.markColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  child: const Text('Continuar'),
+                ),
+              ),
+            ),
           ),
         ),
       ),
