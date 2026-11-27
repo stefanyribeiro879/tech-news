@@ -378,7 +378,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('abertura mostra o logo e abre o app sozinha ou com um toque', (
+  testWidgets('abertura fica parada depois da animação até tocar em Continuar', (
     tester,
   ) async {
     await pumpScreen(
@@ -393,15 +393,28 @@ void main() {
     expect(find.text('News'), findsOneWidget);
     expect(find.text('Página inicial'), findsNothing);
 
-    // Sem tocar, a abertura termina e vira para o app sozinha.
+    // Mesmo muito depois do fim da animação, a abertura continua parada.
     await tester.pump(const Duration(seconds: 3));
-    await tester.pump(SplashScreen.holdAfterAnimation);
+    await tester.pump(const Duration(seconds: 30));
+    expect(find.text('Continuar'), findsOneWidget);
+    expect(find.text('Página inicial'), findsNothing);
+
+    // Tocar fora do botão não faz nada.
+    await tester.tap(find.text('Tech'));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Página inicial'), findsNothing);
+
+    // Só o botão abre o app.
+    await tester.tap(find.text('Continuar'));
+    await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Página inicial'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('um toque na abertura pula direto para o app', (tester) async {
+  testWidgets('o botão Continuar não funciona antes da animação terminar', (
+    tester,
+  ) async {
     await pumpScreen(
       tester,
       sizes['celular pequeno']!,
@@ -409,12 +422,10 @@ void main() {
       const SplashGate(child: Text('Página inicial')),
     );
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Página inicial'), findsNothing);
 
-    await tester.tap(find.text('Tech'));
-    await tester.pump();
+    await tester.tap(find.text('Continuar'), warnIfMissed: false);
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text('Página inicial'), findsOneWidget);
+    expect(find.text('Página inicial'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
